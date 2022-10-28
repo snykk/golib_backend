@@ -14,8 +14,8 @@ func NewBookUsecase(repo Repository) Usecase {
 	}
 }
 
-func (uc *BookUsecase) GetAll() ([]Domain, error) {
-	books, err := uc.Repo.GetAll()
+func (bookUC *BookUsecase) GetAll() ([]Domain, error) {
+	books, err := bookUC.Repo.GetAll()
 
 	if err != nil {
 		return []Domain{}, err
@@ -24,16 +24,16 @@ func (uc *BookUsecase) GetAll() ([]Domain, error) {
 	return books, nil
 }
 
-func (uc *BookUsecase) Store(ctx context.Context, book *Domain) (Domain, error) {
-	result, err := uc.Repo.Store(ctx, book)
+func (bookUC *BookUsecase) Store(ctx context.Context, book *Domain) (Domain, error) {
+	result, err := bookUC.Repo.Store(ctx, book)
 	if err != nil {
 		return result, err
 	}
 	return result, nil
 }
 
-func (uc *BookUsecase) GetById(ctx context.Context, id int) (Domain, error) {
-	result, err := uc.Repo.GetById(ctx, id)
+func (bookUC *BookUsecase) GetById(ctx context.Context, id int) (Domain, error) {
+	result, err := bookUC.Repo.GetById(ctx, id)
 
 	if err != nil {
 		return Domain{}, err
@@ -42,24 +42,23 @@ func (uc *BookUsecase) GetById(ctx context.Context, id int) (Domain, error) {
 	return result, nil
 }
 
-func (uc *BookUsecase) Update(ctx context.Context, book *Domain) (Domain, error) {
-	bookFromDB, err := uc.Repo.GetById(ctx, book.ID)
-	if err != nil {
+func (bookUC *BookUsecase) Update(ctx context.Context, book *Domain, id int) (Domain, error) {
+	book.ID = id
+	if err := bookUC.Repo.Update(ctx, book); err != nil {
 		return Domain{}, err
 	}
 
-	book.CreatedAt = bookFromDB.CreatedAt
-	result, err := uc.Repo.Update(ctx, book)
+	newBook, err := bookUC.Repo.GetById(ctx, id)
 
-	if err != nil {
-		return Domain{}, err
-	}
-
-	return result, nil
+	return newBook, err
 }
 
-func (uc *BookUsecase) Delete(ctx context.Context, id int) error {
-	err := uc.Repo.Delete(ctx, id)
+func (bookUC *BookUsecase) Delete(ctx context.Context, id int) error {
+	_, err := bookUC.Repo.GetById(ctx, id)
+	if err != nil { // check wheter data is exists or not
+		return err
+	}
+	err = bookUC.Repo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}

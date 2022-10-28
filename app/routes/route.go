@@ -22,15 +22,15 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	// middleware jwt
 	jwtService := token.NewJWTService()
 
-	// book route
-	bookRepository := bookRepository.NewBookRepository(conn)
-	bookUsecase := bookUsecase.NewBookUsecase(bookRepository)
-	bookController := bookController.NewBookController(bookUsecase)
-
 	// user route
 	userRepository := userRepository.NewUserRepository(conn)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)
 	userController := userController.NewUserController(userUsecase)
+
+	// book route
+	bookRepository := bookRepository.NewBookRepository(conn)
+	bookUsecase := bookUsecase.NewBookUsecase(bookRepository)
+	bookController := bookController.NewBookController(bookUsecase)
 
 	// ===============> LIST OF ROUTE <==================
 	// => Auth
@@ -44,8 +44,13 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	{
 		userRoute.GET("", userController.GetAll)
 		userRoute.GET("/:id", userController.GetById)
-		userRoute.PUT("/:id", userController.Update)
-		userRoute.DELETE("/:id", userController.Delete)
+
+		// encapsulate action for each user
+		userRoute.Use(middlewares.IsValidUser(jwtService))
+		{
+			userRoute.PUT("/:id", userController.Update)
+			userRoute.DELETE("/:id", userController.Delete)
+		}
 	}
 
 	// => Book

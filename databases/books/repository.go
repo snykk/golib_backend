@@ -17,21 +17,21 @@ func NewBookRepository(conn *gorm.DB) books.Repository {
 	}
 }
 
-func (repo *BookRepository) Store(ctx context.Context, b *books.Domain) (books.Domain, error) {
+func (bookRepo *BookRepository) Store(ctx context.Context, b *books.Domain) (books.Domain, error) {
 	var result = FromDomain(b)
-	if err := repo.Conn.Save(&result).Error; err != nil {
+	if err := bookRepo.Conn.Save(&result).Error; err != nil {
 		return books.Domain{}, err
 	}
 
 	return result.ToDomain(), nil
 }
 
-func (repo *BookRepository) GetAll() ([]books.Domain, error) {
+func (bookRepo *BookRepository) GetAll() ([]books.Domain, error) {
 	var booksFromDB []Book
-	result := repo.Conn.Find(&booksFromDB)
+	err := bookRepo.Conn.Find(&booksFromDB).Error
 
-	if result.Error != nil {
-		return []books.Domain{}, result.Error
+	if err != nil {
+		return []books.Domain{}, err
 	}
 
 	var convertedBook []books.Domain
@@ -43,31 +43,24 @@ func (repo *BookRepository) GetAll() ([]books.Domain, error) {
 	return convertedBook, nil
 }
 
-func (repo *BookRepository) GetById(ctx context.Context, id int) (books.Domain, error) {
-	var b Book
+func (bookRepo *BookRepository) GetById(ctx context.Context, id int) (books.Domain, error) {
+	var book Book
 
-	if err := repo.Conn.First(&b, id).Error; err != nil {
+	if err := bookRepo.Conn.First(&book, id).Error; err != nil {
 		return books.Domain{}, err
 	}
 
-	return b.ToDomain(), nil
+	return book.ToDomain(), nil
 }
 
-func (repo *BookRepository) Update(ctx context.Context, b *books.Domain) (books.Domain, error) {
+func (bookRepo *BookRepository) Update(ctx context.Context, b *books.Domain) (err error) {
 	bookFromDB := FromDomain(b)
-	if err := repo.Conn.Save(bookFromDB).Error; err != nil {
-		return books.Domain{}, err
-	}
-
-	return bookFromDB.ToDomain(), nil
+	err = bookRepo.Conn.Model(&Book{}).Model(&bookFromDB).Updates(&bookFromDB).Error
+	return
 
 }
 
-func (repo *BookRepository) Delete(ctx context.Context, id int) error {
-	err := repo.Conn.Delete(&Book{}, id).Error
-	if err != nil {
-		return err
-	}
-
-	return nil
+func (bookRepo *BookRepository) Delete(ctx context.Context, id int) (err error) {
+	err = bookRepo.Conn.Delete(&Book{}, id).Error
+	return
 }

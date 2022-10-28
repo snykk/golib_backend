@@ -20,7 +20,7 @@ type Usecase interface {
 	GetAll() ([]Domain, error)
 	Store(ctx context.Context, book *Domain) (Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
-	Update(ctx context.Context, book *Domain) (Domain, error)
+	Update(ctx context.Context, book *Domain, id int) (Domain, error)
 	Delete(ctx context.Context, id int) error
 }
 
@@ -28,6 +28,6 @@ type Repository interface {
 	GetAll() ([]Domain, error)
 	Store(ctx context.Context, book *Domain) (Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
-	Update(ctx context.Context, book *Domain) (Domain, error)
+	Update(ctx context.Context, book *Domain) (err error)
 	Delete(ctx context.Context, id int) error
 }

@@ -24,136 +24,124 @@ func NewUserController(usecase users.Usecase) *UserController {
 	}
 }
 
-func ValidateRequest(request interface{}) error {
+func validateRequest(request interface{}) error {
 	validator := validator.New()
 	err := validator.Struct(request)
 	return err
 }
 
-func (controller UserController) Regis(c *gin.Context) {
+func (controller UserController) Regis(ctx *gin.Context) {
 	var UserRegisRequest request.UserRegisRequest
-
-	if err := c.Bind(&UserRegisRequest); err != nil {
-		controllers.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&UserRegisRequest); err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := ValidateRequest(UserRegisRequest); err != nil {
-		controllers.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	if err := validateRequest(UserRegisRequest); err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	user := UserRegisRequest.ToDomain()
-
-	ctx := c.Request.Context()
-
-	user, err := controller.UserUsecase.Store(ctx, &user)
-
+	ctxx := ctx.Request.Context()
+	userDomain := UserRegisRequest.ToDomain()
+	userDomainn, err := controller.UserUsecase.Store(ctxx, &userDomain)
 	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	controllers.NewSuccessResponse(c, "registration user success", map[string]interface{}{
-		"user": responses.FromDomain(user),
+	controllers.NewSuccessResponse(ctx, "registration user success", map[string]interface{}{
+		"user": responses.FromDomain(userDomainn),
 	})
 }
 
-func (controller UserController) Login(c *gin.Context) {
+func (controller UserController) Login(ctx *gin.Context) {
 	var UserLoginRequest request.UserLoginRequest
-	if err := c.Bind(&UserLoginRequest); err != nil {
-		controllers.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&UserLoginRequest); err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := ValidateRequest(UserLoginRequest); err != nil {
-		controllers.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	if err := validateRequest(UserLoginRequest); err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	ctx := c.Request.Context()
-	result, err := controller.UserUsecase.Login(ctx, UserLoginRequest.ToDomain())
+	ctxx := ctx.Request.Context()
+	userDomain, err := controller.UserUsecase.Login(ctxx, UserLoginRequest.ToDomain())
 	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	controllers.NewSuccessResponse(c, "login success", map[string]interface{}{
-		"token": result.Token,
-	})
+	controllers.NewSuccessResponse(ctx, "login success", responses.FromDomainLogin(userDomain))
 }
 
-func (controller UserController) GetAll(c *gin.Context) {
+func (controller UserController) GetAll(ctx *gin.Context) {
 	usersFromUseCase, err := controller.UserUsecase.GetAll()
 
 	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
 	if usersFromUseCase == nil {
-		controllers.NewSuccessResponse(c, "user data is empty", map[string]interface{}{
+		controllers.NewSuccessResponse(ctx, "user data is empty", map[string]interface{}{
 			"users": []int{},
 		})
 		return
 	}
 
-	controllers.NewSuccessResponse(c, "user data fetched successfully", map[string]interface{}{
+	controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
 		"users": responses.ToResponseList(&usersFromUseCase),
 	})
 }
 
-func (controller UserController) GetById(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	ctx := c.Request.Context()
-	userFromUsecase, err := controller.UserUsecase.GetById(ctx, id)
+func (controller UserController) GetById(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	ctxx := ctx.Request.Context()
+	userFromUsecase, err := controller.UserUsecase.GetById(ctxx, id)
 
 	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	controllers.NewSuccessResponse(c, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
+	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
 		"user": userFromUsecase,
 	})
 }
 
-func (controller UserController) Update(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	ctx := c.Request.Context()
-	var payload request.UserRegisRequest
-	err := c.Bind(&payload)
+func (controller UserController) Update(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	var userRequest request.UserRequest
 
-	if err := ValidateRequest(payload); err != nil {
-		controllers.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+	if err := ctx.ShouldBindJSON(&userRequest); err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
+
+	userDomain := userRequest.ToDomain()
+	ctxx := ctx.Request.Context()
+	userDomainn, err := controller.UserUsecase.Update(ctxx, &userDomain, id)
 
 	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusBadRequest, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	domainReq := payload.ToDomain()
-	result, err := controller.UserUsecase.Update(ctx, &domainReq, id)
-
-	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
-		return
-	}
-
-	controllers.NewSuccessResponse(c, fmt.Sprintf("user data with id %d updated successfully", id), responses.FromDomain(result))
+	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d updated successfully", id), responses.FromDomain(userDomainn))
 }
 
-func (controller UserController) Delete(c *gin.Context) {
-	id, _ := strconv.Atoi(c.Param("id"))
-	ctx := c.Request.Context()
+func (controller UserController) Delete(ctx *gin.Context) {
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	ctxx := ctx.Request.Context()
 
-	err := controller.UserUsecase.Delete(ctx, id)
+	err := controller.UserUsecase.Delete(ctxx, id)
 	if err != nil {
-		controllers.NewErrorResponse(c, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	controllers.NewSuccessResponse(c, fmt.Sprintf("book data with id %d deleted successfully", id), []int{})
+	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d deleted successfully", id), []int{})
 }

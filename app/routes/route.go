@@ -54,9 +54,14 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	{
 		bookRoute.GET("", bookController.GetAll)
 		bookRoute.GET("/:id", bookController.GetById)
-		bookRoute.POST("", bookController.Store)
-		bookRoute.PUT("/:id", bookController.Update)
-		bookRoute.DELETE("/:id", bookController.Delete)
+
+		// admin middleware
+		bookRoute.Use(middlewares.IsAdmin(jwtService))
+		{
+			bookRoute.POST("", bookController.Store)
+			bookRoute.PUT("/:id", bookController.Update)
+			bookRoute.DELETE("/:id", bookController.Delete)
+		}
 	}
 
 	log.Println("[INIT] router success")

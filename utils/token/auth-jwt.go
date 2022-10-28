@@ -1,6 +1,7 @@
 package token
 
 import (
+	"errors"
 	"fmt"
 	"time"
 
@@ -62,4 +63,14 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 		}
 		return []byte(j.secretKey), nil
 	})
+}
+
+func GetToken(authHeader string, jwtService JWTService) (token *jwt.Token, err error) {
+	if authHeader == "" {
+		err = errors.New("authorization header not found")
+		return
+	}
+
+	token, _ = jwtService.ValidateToken(authHeader)
+	return
 }

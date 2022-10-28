@@ -1,7 +1,6 @@
 package middlewares
 
 import (
-	"fmt"
 	"net/http"
 
 	"github.com/dgrijalva/jwt-go"
@@ -9,7 +8,7 @@ import (
 	"github.com/snykk/golib_backend/utils/token"
 )
 
-func AuthorizeJWT(jwtService token.JWTService) gin.HandlerFunc {
+func IsAdmin(jwtService token.JWTService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		authHeader := c.GetHeader("Authorization")
 
@@ -19,12 +18,11 @@ func AuthorizeJWT(jwtService token.JWTService) gin.HandlerFunc {
 			return
 		}
 
-		if token.Valid {
-			claims := token.Claims.(jwt.MapClaims)
-			fmt.Println(claims)
+		claims := token.Claims.(jwt.MapClaims)
+		if claims["IsAdmin"] == true {
 			return
 		}
 
-		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"status": false, "message": "token is not valid"})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"status": false, "message": "you're not admin"})
 	}
 }

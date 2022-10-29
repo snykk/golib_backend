@@ -11,6 +11,8 @@ type UserResponse struct {
 	Name      string    `json:"name"`
 	Email     string    `json:"email"`
 	IsAdmin   bool      `json:"is_admin"`
+	Password  string    `json:"password,omitempty"`
+	Token     string    `json:"token,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -32,6 +34,8 @@ func FromDomain(u users.Domain) UserResponse {
 		Name:      u.Name,
 		Email:     u.Email,
 		IsAdmin:   u.IsAdmin,
+		Password:  u.Password,
+		Token:     u.Token,
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 	}

@@ -44,7 +44,7 @@ func (userUC UserUsecase) Login(ctx context.Context, domain *Domain) (Domain, er
 	}
 
 	if !encrpyt.ValidateHash(domain.Password, userDomain.Password) {
-		return Domain{}, errors.New("invalid username or password")
+		return Domain{}, errors.New("invalid email or password")
 	}
 
 	if userDomain.IsAdmin {
@@ -67,14 +67,26 @@ func (userUC UserUsecase) GetAll() ([]Domain, error) {
 		return []Domain{}, err
 	}
 
+	// encapsulate password
+	for i := 0; i < len(usersFromRepo); i++ {
+		usersFromRepo[i].Password = ""
+	}
+
 	return usersFromRepo, err
 }
 
-func (userUC UserUsecase) GetById(ctx context.Context, id int) (Domain, error) {
+func (userUC UserUsecase) GetById(ctx context.Context, id int, authHeader string) (Domain, error) {
 	user, err := userUC.Repo.GetById(ctx, id)
 	if err != nil {
 		return Domain{}, err
 	}
+
+	// get claims
+	claims, _ := userUC.JwtService.ParseToken(authHeader)
+	if id != claims.UserID {
+		user.Password = ""
+	}
+
 	return user, nil
 }
 
@@ -82,8 +94,10 @@ func (userUC UserUsecase) Update(ctx context.Context, domain *Domain, id int) (D
 	var err error
 	domain.Id = id
 
-	if domain.Password, err = encrpyt.GenerateHash(domain.Password); err != nil {
-		return Domain{}, err
+	if domain.Password != "" {
+		if domain.Password, err = encrpyt.GenerateHash(domain.Password); err != nil {
+			return Domain{}, err
+		}
 	}
 
 	if err := userUC.Repo.Update(ctx, domain); err != nil {

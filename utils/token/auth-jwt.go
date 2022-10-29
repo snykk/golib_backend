@@ -12,6 +12,7 @@ import (
 type JWTService interface {
 	GenerateToken(userID int, isAdmin bool) (t string, err error)
 	ValidateToken(token string) (*jwt.Token, error)
+	ParseToken(tokenString string) (claims jwtCustomClaim, err error)
 }
 
 type jwtCustomClaim struct {
@@ -65,12 +66,12 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	})
 }
 
-func GetToken(authHeader string, jwtService JWTService) (token *jwt.Token, err error) {
-	if authHeader == "" {
-		err = errors.New("authorization header not found")
-		return
+func (j *jwtService) ParseToken(tokenString string) (claims jwtCustomClaim, err error) {
+	if token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
+		return []byte(j.secretKey), nil
+	}); err != nil || !token.Valid {
+		return jwtCustomClaim{}, errors.New("token is not valid")
 	}
 
-	token, _ = jwtService.ValidateToken(authHeader)
 	return
 }

@@ -98,17 +98,20 @@ func (controller UserController) GetAll(ctx *gin.Context) {
 }
 
 func (controller UserController) GetById(ctx *gin.Context) {
-	id, _ := strconv.Atoi(ctx.Param("id"))
 	ctxx := ctx.Request.Context()
-	userFromUsecase, err := controller.UserUsecase.GetById(ctxx, id)
+	id, _ := strconv.Atoi(ctx.Param("id"))
+	authHeader := ctx.GetHeader("Authorization")
+	userFromUsecase, err := controller.UserUsecase.GetById(ctxx, id, authHeader)
 
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
+	userResponse := responses.FromDomain(userFromUsecase)
+
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
-		"user": userFromUsecase,
+		"user": userResponse,
 	})
 }
 

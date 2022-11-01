@@ -22,6 +22,10 @@ type Config struct {
 	JWTSecret  string
 	JWTExpired int
 	JWTIssuer  string
+
+	OTPUsername string
+	OTPPassword string
+	OTPExpired  int
 }
 
 func InitializeAppConfig() {
@@ -48,5 +52,8 @@ func InitializeAppConfig() {
 	AppConfig.JWTExpired = viper.GetInt("JWT_EXPIRED")
 	AppConfig.JWTIssuer = viper.GetString("JWT_ISSUER")
 
+	AppConfig.OTPUsername = viper.GetString("OTP_USERNAME")
+	AppConfig.OTPPassword = viper.GetString("OTP_PASSWORD")
+	AppConfig.OTPExpired = viper.GetInt("OTP_EXPIRED")
 	log.Println("[INIT] configuration loaded")
 }

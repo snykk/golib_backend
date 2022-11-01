@@ -5,6 +5,7 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/app/middlewares"
+	"github.com/snykk/golib_backend/cache"
 	"github.com/snykk/golib_backend/utils/token"
 	"gorm.io/gorm"
 
@@ -22,10 +23,12 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	// middleware jwt
 	jwtService := token.NewJWTService()
 
+	// CACHE
+	redisCache := cache.NewRedisCache("localhost:6379", 0, 5)
 	// user route
 	userRepository := userRepository.NewUserRepository(conn)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)
-	userController := userController.NewUserController(userUsecase)
+	userController := userController.NewUserController(userUsecase, redisCache)
 
 	// book route
 	bookRepository := bookRepository.NewBookRepository(conn)
@@ -37,6 +40,8 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	authRoute := router.Group("auth")
 	authRoute.POST("/login", userController.Login)
 	authRoute.POST("/regis", userController.Regis)
+	authRoute.POST("/send-otp", userController.SendOTP)
+	authRoute.POST("/verif-otp", userController.VerifOTP)
 
 	// => User
 	userRoute := router.Group("users")

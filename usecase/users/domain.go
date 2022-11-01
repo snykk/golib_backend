@@ -12,6 +12,7 @@ type Domain struct {
 	Password  string
 	IsAdmin   bool
 	Token     string
+	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
 }
@@ -23,6 +24,8 @@ type Usecase interface {
 	Update(ctx context.Context, domain *Domain, id int) (Domain, error)
 	Delete(ctx context.Context, id int) error
 	Login(ctx context.Context, domain *Domain) (Domain, error)
+	ActivateUser(ctx context.Context, email string) (err error)
+	GetByEmail(ctx context.Context, email string) (Domain, error)
 }
 
 type Repository interface {

@@ -43,6 +43,10 @@ func (userUC UserUsecase) Login(ctx context.Context, domain *Domain) (Domain, er
 		return Domain{}, err
 	}
 
+	if !userDomain.IsActive {
+		return Domain{}, errors.New("account is not activated")
+	}
+
 	if !encrpyt.ValidateHash(domain.Password, userDomain.Password) {
 		return Domain{}, errors.New("invalid email or password")
 	}
@@ -119,4 +123,26 @@ func (userUC UserUsecase) Delete(ctx context.Context, id int) error {
 		return err
 	}
 	return nil
+}
+
+func (userUC UserUsecase) GetByEmail(ctx context.Context, email string) (Domain, error) {
+	user, err := userUC.Repo.GetByEmail(ctx, &Domain{Email: email})
+	if err != nil {
+		return Domain{}, err
+	}
+
+	return user, nil
+}
+
+func (userUC UserUsecase) ActivateUser(ctx context.Context, email string) (err error) {
+	user, err := userUC.Repo.GetByEmail(ctx, &Domain{Email: email})
+	if err != nil {
+		return err
+	}
+
+	if err = userUC.Repo.Update(ctx, &Domain{Id: user.Id, IsActive: true}); err != nil {
+		return err
+	}
+
+	return
 }

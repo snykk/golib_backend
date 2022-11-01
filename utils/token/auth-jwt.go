@@ -27,19 +27,24 @@ type jwtService struct {
 }
 
 func NewJWTService() JWTService {
+	issuer, secretKey := getConfigClaims()
 	return &jwtService{
-		issuer:    config.AppConfig.JWTIssuer,
-		secretKey: getSecretKey(),
+		issuer:    issuer,
+		secretKey: secretKey,
 	}
 }
 
-func getSecretKey() string {
-	secretKey := config.AppConfig.JWTSecret
+// defautt value if config is not exists
+func getConfigClaims() (issuer string, secretKey string) {
+	issuer = config.AppConfig.JWTIssuer
+	secretKey = config.AppConfig.JWTSecret
+	if issuer == "" {
+		issuer = "john-doe"
+	}
 	if secretKey == "" {
 		secretKey = "this-is-not-secret-anymore-mwuehehe"
 	}
-
-	return secretKey
+	return
 }
 
 func (j *jwtService) GenerateToken(UserID int, isAdmin bool) (t string, err error) {
@@ -47,7 +52,7 @@ func (j *jwtService) GenerateToken(UserID int, isAdmin bool) (t string, err erro
 		UserID,
 		isAdmin,
 		jwt.StandardClaims{
-			ExpiresAt: time.Now().AddDate(1, 0, 0).Unix(),
+			ExpiresAt: time.Now().Add(time.Hour * time.Duration(config.AppConfig.JWTExpired)).Unix(),
 			Issuer:    j.issuer,
 			IssuedAt:  time.Now().Unix(),
 		},

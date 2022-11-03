@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 
+	configEnv "github.com/snykk/golib_backend/config"
 	bookRepository "github.com/snykk/golib_backend/databases/books"
 	userRepository "github.com/snykk/golib_backend/databases/users"
 	"gorm.io/driver/postgres"
@@ -24,11 +25,17 @@ func DbMigrate(db *gorm.DB) {
 }
 
 func (config *ConfigDB) InitializeDatabase() *gorm.DB {
-	db, err := gorm.Open(postgres.Open(
-		fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=disable",
+	var dsn string
+
+	if configEnv.AppConfig.Environment == "development" {
+		dsn = fmt.Sprintf("host=%s port=%d dbname=%s user=%s password=%s sslmode=disable",
 			config.DB_Host, config.DB_Port, config.DB_Database,
-			config.DB_Username, config.DB_Password),
-	), &gorm.Config{})
+			config.DB_Username, config.DB_Password)
+	} else if configEnv.AppConfig.Environment == "production" {
+		dsn = configEnv.AppConfig.DBDsn
+	}
+
+	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
 		log.Println("[INIT] failed connecting to PostgreSQL")

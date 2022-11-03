@@ -2,10 +2,13 @@ package routes
 
 import (
 	"log"
+	"net/http"
+	"time"
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/app/middlewares"
 	"github.com/snykk/golib_backend/cache"
+	"github.com/snykk/golib_backend/config"
 	"github.com/snykk/golib_backend/utils/token"
 	"gorm.io/gorm"
 
@@ -24,7 +27,7 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	jwtService := token.NewJWTService()
 
 	// CACHE
-	redisCache := cache.NewRedisCache("localhost:6379", 0, 5)
+	redisCache := cache.NewRedisCache(config.AppConfig.REDISHost, 0, config.AppConfig.REDISPassword, time.Duration(config.AppConfig.REDISExpired))
 	// user route
 	userRepository := userRepository.NewUserRepository(conn)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)
@@ -36,6 +39,9 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 	bookController := bookController.NewBookController(bookUsecase)
 
 	// ===============> LIST OF ROUTE <==================
+	// => Root
+	router.GET("/", rootHandler)
+
 	// => Auth
 	authRoute := router.Group("auth")
 	authRoute.POST("/login", userController.Login)
@@ -76,4 +82,50 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 
 	log.Println("[INIT] router success")
 	return
+}
+
+type Base struct {
+	Routes     Routes            `json:"routes"`
+	Middleware map[string]string `json:"middleware"`
+	Maintainer string            `json:"maintainer"`
+	Repository string            `json:"repository"`
+}
+
+type Routes struct {
+	Auth  map[string]string `json:"auth"`
+	Users map[string]string `json:"users"`
+	Books map[string]string `json:"books"`
+}
+
+func rootHandler(ctx *gin.Context) {
+	ctx.JSON(http.StatusOK, Base{
+		Routes: Routes{
+			Auth: map[string]string{
+				"Login [POST]":     "/auth/login",
+				"Regis [POST]":     "/auth/regis",
+				"Send OTP [POST]":  "/auth/send-otp",
+				"Verif OTP [POST]": "/auth/verif-otp",
+			},
+			Users: map[string]string{
+				"Get Users [GET] <AuthorizeJWT>":                 "/users",
+				"Get User [GET] <AuthorizeJWT>":                  "/users/:id",
+				"Update User [PUT] <AuthorizeJWT> <IsValidUser>": "/users/:id",
+				"Delete User [PUT] <AuthorizeJWT> <IsValidUser>": "/users/:id",
+			},
+			Books: map[string]string{
+				"Get Books [GET] <AuthorizeJWT>":              "/books",
+				"Get Book [GET] <AuthorizeJWT>":               "/books/:id",
+				"Create Book [POST] <AuthorizeJWT> <IsAdmin>": "/books",
+				"Update Book [PUT] <AuthorizeJWT> <IsAdmin>":  "/books/:id",
+				"Delete Book [PUT] <AuthorizeJWT> <IsAdmin>":  "/books/:id",
+			},
+		},
+		Middleware: map[string]string{
+			"<AuthorizeJWT>": "only user with valid token can access endpoint",
+			"<IsValidUser>":  "only user itself or admin can access endpoint",
+			"<IsAdmin>":      "only admin can access endpoint",
+		},
+		Maintainer: "Moh. Najib Fikri aka snykk github.com/snykk najibfikri13@gmail.com",
+		Repository: "https://github.com/snykk/golib-backend",
+	})
 }

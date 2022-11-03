@@ -14,23 +14,25 @@ type RedisCache interface {
 }
 
 type redisCache struct {
-	host    string
-	db      int
-	expires time.Duration
+	host     string
+	db       int
+	password string
+	expires  time.Duration
 }
 
-func NewRedisCache(host string, db int, expires time.Duration) RedisCache {
+func NewRedisCache(host string, db int, password string, expires time.Duration) RedisCache {
 	return &redisCache{
-		host:    host,
-		db:      db,
-		expires: expires,
+		host:     host,
+		db:       db,
+		password: password,
+		expires:  expires,
 	}
 }
 
 func (cache *redisCache) getClient() *redis.Client {
 	return redis.NewClient(&redis.Options{
 		Addr:     cache.host,
-		Password: "",
+		Password: cache.password,
 		DB:       cache.db,
 	})
 }

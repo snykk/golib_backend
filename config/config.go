@@ -18,6 +18,7 @@ type Config struct {
 	DBDatabase string
 	DBUsername string
 	DBPassword string
+	DBDsn      string
 
 	JWTSecret  string
 	JWTExpired int
@@ -25,7 +26,10 @@ type Config struct {
 
 	OTPUsername string
 	OTPPassword string
-	OTPExpired  int
+
+	REDISHost     string
+	REDISPassword string
+	REDISExpired  int
 }
 
 func InitializeAppConfig() {
@@ -47,6 +51,7 @@ func InitializeAppConfig() {
 	AppConfig.DBDatabase = viper.GetString("DB_DATABASE")
 	AppConfig.DBUsername = viper.GetString("DB_USERNAME")
 	AppConfig.DBPassword = viper.GetString("DB_PASSWORD")
+	AppConfig.DBDsn = viper.GetString("DB_DSN")
 
 	AppConfig.JWTSecret = viper.GetString("JWT_SECRET")
 	AppConfig.JWTExpired = viper.GetInt("JWT_EXPIRED")
@@ -54,6 +59,9 @@ func InitializeAppConfig() {
 
 	AppConfig.OTPUsername = viper.GetString("OTP_USERNAME")
 	AppConfig.OTPPassword = viper.GetString("OTP_PASSWORD")
-	AppConfig.OTPExpired = viper.GetInt("OTP_EXPIRED")
+
+	AppConfig.REDISHost = viper.GetString("REDIS_HOST")
+	AppConfig.REDISPassword = viper.GetString("REDIS_PASS")
+	AppConfig.REDISExpired = viper.GetInt("REDIS_EXPIRED")
 	log.Println("[INIT] configuration loaded")
 }

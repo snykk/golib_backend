@@ -10,7 +10,7 @@ import (
 	"github.com/snykk/golib_backend/controllers"
 	"github.com/snykk/golib_backend/controllers/books/requests"
 	"github.com/snykk/golib_backend/controllers/books/responses"
-	book "github.com/snykk/golib_backend/usecase/books"
+	book "github.com/snykk/golib_backend/usecases/books"
 )
 
 type BookController struct {

@@ -7,17 +7,17 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/app/middlewares"
-	"github.com/snykk/golib_backend/cache"
 	"github.com/snykk/golib_backend/config"
+	"github.com/snykk/golib_backend/datasources/cache"
 	"github.com/snykk/golib_backend/utils/token"
 	"gorm.io/gorm"
 
 	bookController "github.com/snykk/golib_backend/controllers/books"
 	userController "github.com/snykk/golib_backend/controllers/users"
-	bookRepository "github.com/snykk/golib_backend/databases/books"
-	userRepository "github.com/snykk/golib_backend/databases/users"
-	bookUsecase "github.com/snykk/golib_backend/usecase/books"
-	userUsecase "github.com/snykk/golib_backend/usecase/users"
+	bookRepository "github.com/snykk/golib_backend/datasources/postgre/books"
+	userRepository "github.com/snykk/golib_backend/datasources/postgre/users"
+	bookUsecase "github.com/snykk/golib_backend/usecases/books"
+	userUsecase "github.com/snykk/golib_backend/usecases/users"
 )
 
 func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
@@ -28,6 +28,7 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 
 	// CACHE
 	redisCache := cache.NewRedisCache(config.AppConfig.REDISHost, 0, config.AppConfig.REDISPassword, time.Duration(config.AppConfig.REDISExpired))
+
 	// user route
 	userRepository := userRepository.NewUserRepository(conn)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)

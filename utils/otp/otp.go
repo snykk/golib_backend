@@ -11,12 +11,12 @@ const otpPayloads = "0123456789"
 
 func SendOTP(code string, receiver string) (err error) {
 	configMessage := gomail.NewMessage()
-	configMessage.SetHeader("From", "najibfikri13@gmail.com")
+	configMessage.SetHeader("From", config.AppConfig.OTPEmail)
 	configMessage.SetHeader("To", receiver)
 	configMessage.SetHeader("Subject", "Verification Email")
-	configMessage.SetBody("text/plain", "OTP code: "+code)
+	configMessage.SetBody("text/plain", "OTP: "+code+"\nthis code wil be expired in 5 minutes")
 
-	dialer := gomail.NewDialer("smtp.gmail.com", 587, config.AppConfig.OTPUsername, config.AppConfig.OTPPassword)
+	dialer := gomail.NewDialer("smtp.gmail.com", 587, config.AppConfig.OTPEmail, config.AppConfig.OTPPassword)
 
 	err = dialer.DialAndSend(configMessage)
 	return

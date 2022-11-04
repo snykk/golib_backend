@@ -7,11 +7,11 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/cache"
 	"github.com/snykk/golib_backend/controllers"
 	"github.com/snykk/golib_backend/controllers/users/request"
 	"github.com/snykk/golib_backend/controllers/users/responses"
-	"github.com/snykk/golib_backend/usecase/users"
+	"github.com/snykk/golib_backend/datasources/cache"
+	"github.com/snykk/golib_backend/usecases/users"
 	"github.com/snykk/golib_backend/utils/otp"
 
 	validator "github.com/go-playground/validator/v10"

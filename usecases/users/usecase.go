@@ -52,9 +52,9 @@ func (userUC UserUsecase) Login(ctx context.Context, domain *Domain) (Domain, er
 	}
 
 	if userDomain.IsAdmin {
-		userDomain.Token, err = userUC.JwtService.GenerateToken(userDomain.Id, true)
+		userDomain.Token, err = userUC.JwtService.GenerateToken(userDomain.ID, true)
 	} else {
-		userDomain.Token, err = userUC.JwtService.GenerateToken(userDomain.Id, false)
+		userDomain.Token, err = userUC.JwtService.GenerateToken(userDomain.ID, false)
 	}
 
 	if err != nil {
@@ -96,7 +96,7 @@ func (userUC UserUsecase) GetById(ctx context.Context, id int, authHeader string
 
 func (userUC UserUsecase) Update(ctx context.Context, domain *Domain, id int) (Domain, error) {
 	var err error
-	domain.Id = id
+	domain.ID = id
 
 	if domain.Password != "" {
 		if domain.Password, err = encrpyt.GenerateHash(domain.Password); err != nil {
@@ -140,7 +140,7 @@ func (userUC UserUsecase) ActivateUser(ctx context.Context, email string) (err e
 		return err
 	}
 
-	if err = userUC.Repo.Update(ctx, &Domain{Id: user.Id, IsActive: true}); err != nil {
+	if err = userUC.Repo.Update(ctx, &Domain{ID: user.ID, IsActive: true}); err != nil {
 		return err
 	}
 

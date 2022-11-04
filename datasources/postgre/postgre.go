@@ -5,8 +5,8 @@ import (
 	"log"
 
 	configEnv "github.com/snykk/golib_backend/config"
-	bookRepository "github.com/snykk/golib_backend/databases/books"
-	userRepository "github.com/snykk/golib_backend/databases/users"
+	bookRepository "github.com/snykk/golib_backend/datasources/postgre/books"
+	userRepository "github.com/snykk/golib_backend/datasources/postgre/users"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
@@ -17,6 +17,7 @@ type ConfigDB struct {
 	DB_Host     string
 	DB_Port     int
 	DB_Database string
+	DB_DSN      string
 }
 
 func DbMigrate(db *gorm.DB) {
@@ -32,7 +33,7 @@ func (config *ConfigDB) InitializeDatabase() *gorm.DB {
 			config.DB_Host, config.DB_Port, config.DB_Database,
 			config.DB_Username, config.DB_Password)
 	} else if configEnv.AppConfig.Environment == "production" {
-		dsn = configEnv.AppConfig.DBDsn
+		dsn = config.DB_DSN
 	}
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})

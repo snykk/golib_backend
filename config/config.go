@@ -1,6 +1,7 @@
 package config
 
 import (
+	"errors"
 	"log"
 
 	"github.com/spf13/viper"
@@ -24,7 +25,7 @@ type Config struct {
 	JWTExpired int
 	JWTIssuer  string
 
-	OTPUsername string
+	OTPEmail    string
 	OTPPassword string
 
 	REDISHost     string
@@ -32,7 +33,7 @@ type Config struct {
 	REDISExpired  int
 }
 
-func InitializeAppConfig() {
+func InitializeAppConfig() error {
 	viper.SetConfigName(".env") // allow directly reading from .env file
 	viper.SetConfigType("env")
 	viper.AddConfigPath(".")
@@ -42,6 +43,7 @@ func InitializeAppConfig() {
 	viper.AutomaticEnv()
 	_ = viper.ReadInConfig()
 
+	// assign value
 	AppConfig.Port = viper.GetInt("PORT")
 	AppConfig.Environment = viper.GetString("ENVIRONMENT")
 	AppConfig.Debug = viper.GetBool("DEBUG")
@@ -57,11 +59,29 @@ func InitializeAppConfig() {
 	AppConfig.JWTExpired = viper.GetInt("JWT_EXPIRED")
 	AppConfig.JWTIssuer = viper.GetString("JWT_ISSUER")
 
-	AppConfig.OTPUsername = viper.GetString("OTP_USERNAME")
+	AppConfig.OTPEmail = viper.GetString("OTP_EMAIL")
 	AppConfig.OTPPassword = viper.GetString("OTP_PASSWORD")
 
 	AppConfig.REDISHost = viper.GetString("REDIS_HOST")
 	AppConfig.REDISPassword = viper.GetString("REDIS_PASS")
 	AppConfig.REDISExpired = viper.GetInt("REDIS_EXPIRED")
+
+	// check
+	if AppConfig.Port == 0 || AppConfig.Environment == "" || AppConfig.JWTSecret == "" || AppConfig.JWTExpired == 0 || AppConfig.JWTIssuer == "" || AppConfig.OTPEmail == "" || AppConfig.OTPPassword == "" || AppConfig.REDISHost == "" || AppConfig.REDISPassword == "" || AppConfig.REDISExpired == 0 {
+		return errors.New("required variabel environment is empty")
+	}
+
+	switch AppConfig.Environment {
+	case "development":
+		if AppConfig.DBHost == "" || AppConfig.DBPort == 0 || AppConfig.DBDatabase == "" || AppConfig.DBUsername == "" || AppConfig.DBPassword == "" {
+			return errors.New("required variabel environment is empty")
+		}
+	case "production":
+		if AppConfig.DBDsn == "" {
+			return errors.New("required variabel environment is empty")
+		}
+	}
+
 	log.Println("[INIT] configuration loaded")
+	return nil
 }

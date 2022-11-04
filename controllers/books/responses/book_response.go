@@ -3,7 +3,7 @@ package responses
 import (
 	"time"
 
-	"github.com/snykk/golib_backend/usecase/books"
+	"github.com/snykk/golib_backend/usecases/books"
 )
 
 type BookResponse struct {

@@ -3,16 +3,16 @@ package books
 import (
 	"time"
 
-	books "github.com/snykk/golib_backend/usecase/books"
+	books "github.com/snykk/golib_backend/usecases/books"
 )
 
 type Book struct {
-	Id          int    `gorm:"primaryKey"`
-	Title       string `json:"title" form:"title"`
-	Description string `json:"description" form:"description"`
-	Author      string `json:"author" form:"author"`
-	Publisher   string `json:"publisher" form:"publisher"`
-	ISBN        string `json:"isbn" form:"isbn"`
+	Id          int
+	Title       string
+	Description string
+	Author      string
+	Publisher   string
+	ISBN        string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

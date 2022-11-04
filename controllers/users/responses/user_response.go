@@ -3,7 +3,7 @@ package responses
 import (
 	"time"
 
-	"github.com/snykk/golib_backend/usecase/users"
+	"github.com/snykk/golib_backend/usecases/users"
 )
 
 type UserResponse struct {
@@ -19,7 +19,7 @@ type UserResponse struct {
 
 func (u *UserResponse) ToDomain() users.Domain {
 	return users.Domain{
-		Id:        u.Id,
+		ID:        u.Id,
 		Name:      u.Name,
 		Email:     u.Email,
 		IsAdmin:   u.IsAdmin,
@@ -30,7 +30,7 @@ func (u *UserResponse) ToDomain() users.Domain {
 
 func FromDomain(u users.Domain) UserResponse {
 	return UserResponse{
-		Id:        u.Id,
+		Id:        u.ID,
 		Name:      u.Name,
 		Email:     u.Email,
 		IsAdmin:   u.IsAdmin,

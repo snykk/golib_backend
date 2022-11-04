@@ -1,6 +1,6 @@
 package request
 
-import users "github.com/snykk/golib_backend/usecase/users"
+import users "github.com/snykk/golib_backend/usecases/users"
 
 type UserLoginRequest struct {
 	Email    string `json:"email" validate:"required"`

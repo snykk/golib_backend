@@ -1,7 +1,7 @@
 package requests
 
 import (
-	"github.com/snykk/golib_backend/usecase/books"
+	"github.com/snykk/golib_backend/usecases/books"
 )
 
 type BookUpdateRequest struct {

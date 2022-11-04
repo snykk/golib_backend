@@ -6,7 +6,7 @@ import (
 )
 
 type Domain struct {
-	Id        int
+	ID        int
 	Name      string
 	Email     string
 	Password  string

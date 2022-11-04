@@ -10,11 +10,14 @@ import (
 	"github.com/snykk/golib_backend/app/routes"
 	"github.com/snykk/golib_backend/config"
 
-	postgre "github.com/snykk/golib_backend/databases"
+	postgre "github.com/snykk/golib_backend/datasources/postgre"
 )
 
 func init() {
-	config.InitializeAppConfig()
+	if err := config.InitializeAppConfig(); err != nil {
+		log.Fatal(err)
+	}
+
 	if !config.AppConfig.Debug {
 		gin.SetMode(gin.ReleaseMode)
 	}
@@ -27,6 +30,7 @@ func main() {
 		DB_Host:     config.AppConfig.DBHost,
 		DB_Port:     config.AppConfig.DBPort,
 		DB_Database: config.AppConfig.DBDatabase,
+		DB_DSN:      config.AppConfig.DBDsn,
 	}
 
 	conn := configDB.InitializeDatabase()

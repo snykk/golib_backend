@@ -3,7 +3,7 @@ package users
 import (
 	"context"
 
-	"github.com/snykk/golib_backend/usecase/users"
+	"github.com/snykk/golib_backend/usecases/users"
 
 	"gorm.io/gorm"
 )

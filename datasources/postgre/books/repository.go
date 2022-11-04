@@ -3,7 +3,7 @@ package books
 import (
 	"context"
 
-	"github.com/snykk/golib_backend/usecase/books"
+	"github.com/snykk/golib_backend/usecases/books"
 	"gorm.io/gorm"
 )
 

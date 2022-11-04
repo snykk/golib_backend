@@ -3,7 +3,7 @@ package users
 import (
 	"time"
 
-	"github.com/snykk/golib_backend/usecase/users"
+	"github.com/snykk/golib_backend/usecases/users"
 )
 
 type User struct {
@@ -19,7 +19,7 @@ type User struct {
 
 func (u *User) ToDomain() users.Domain {
 	return users.Domain{
-		Id:        u.Id,
+		ID:        u.Id,
 		Name:      u.Name,
 		Email:     u.Email,
 		Password:  u.Password,
@@ -32,7 +32,7 @@ func (u *User) ToDomain() users.Domain {
 
 func FromDomain(u *users.Domain) User {
 	return User{
-		Id:        u.Id,
+		Id:        u.ID,
 		Name:      u.Name,
 		Email:     u.Email,
 		Password:  u.Password,

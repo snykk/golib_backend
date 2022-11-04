@@ -1,12 +1,12 @@
 package requests
 
 import (
-	"github.com/snykk/golib_backend/usecase/books"
+	"github.com/snykk/golib_backend/usecases/books"
 )
 
 type BookRequest struct {
 	Title       string `json:"title" validate:"required"`
-	Author      string `json:"author" validater:"required"`
+	Author      string `json:"author" validate:"required"`
 	Description string `json:"description" validate:"required"`
 	Publisher   string `json:"publisher" validate:"required"`
 	ISBN        string `json:"isbn" validate:"required"`

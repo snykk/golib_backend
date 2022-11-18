@@ -29,3 +29,13 @@ func FromDomain(bookDomain books.Domain) BookResponse {
 		UpdatedAt:   bookDomain.UpdatedAt,
 	}
 }
+
+func ToResponseList(domains []books.Domain) []BookResponse {
+	var result []BookResponse
+
+	for _, val := range domains {
+		result = append(result, FromDomain(val))
+	}
+
+	return result
+}

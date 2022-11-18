@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/snykk/golib_backend/usecases/users"
+	"gorm.io/gorm"
 )
 
 type User struct {
@@ -15,6 +16,7 @@ type User struct {
 	IsActive  bool
 	CreatedAt time.Time
 	UpdatedAt time.Time
+	DeletedAt gorm.DeletedAt `gorm:"index"`
 }
 
 func (u *User) ToDomain() users.Domain {

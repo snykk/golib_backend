@@ -18,14 +18,16 @@ import (
 )
 
 type UserController struct {
-	UserUsecase users.Usecase
-	RedisCache  cache.RedisCache
+	UserUsecase    users.Usecase
+	RedisCache     cache.RedisCache
+	RistrettoCache cache.RistrettoCache
 }
 
-func NewUserController(usecase users.Usecase, redisCache cache.RedisCache) *UserController {
+func NewUserController(usecase users.Usecase, redisCache cache.RedisCache, ristrettoCache cache.RistrettoCache) *UserController {
 	return &UserController{
-		UserUsecase: usecase,
-		RedisCache:  redisCache,
+		UserUsecase:    usecase,
+		RedisCache:     redisCache,
+		RistrettoCache: ristrettoCache,
 	}
 }
 
@@ -83,6 +85,13 @@ func (userController UserController) Login(ctx *gin.Context) {
 }
 
 func (userController UserController) GetAll(ctx *gin.Context) {
+	if val := userController.RistrettoCache.Get("users"); val != nil {
+		controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
+			"users": val,
+		})
+		return
+	}
+
 	usersFromUseCase, err := userController.UserUsecase.GetAll()
 
 	if err != nil {
@@ -97,14 +106,25 @@ func (userController UserController) GetAll(ctx *gin.Context) {
 		return
 	}
 
+	userResponses := responses.ToResponseList(usersFromUseCase)
+
+	userController.RistrettoCache.Set("users", userResponses)
+
 	controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
-		"users": responses.ToResponseList(&usersFromUseCase),
+		"users": userResponses,
 	})
 }
 
 func (userController UserController) GetById(ctx *gin.Context) {
-	ctxx := ctx.Request.Context()
 	id, _ := strconv.Atoi(ctx.Param("id"))
+	if val := userController.RistrettoCache.Get(fmt.Sprintf("user/%d", id)); val != nil {
+		controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
+			"user": val,
+		})
+		return
+	}
+
+	ctxx := ctx.Request.Context()
 	authHeader := ctx.GetHeader("Authorization")
 	userFromUsecase, err := userController.UserUsecase.GetById(ctxx, id, authHeader)
 
@@ -114,6 +134,8 @@ func (userController UserController) GetById(ctx *gin.Context) {
 	}
 
 	userResponse := responses.FromDomain(userFromUsecase)
+
+	userController.RistrettoCache.Set(fmt.Sprintf("user/%d", id), userResponse)
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
 		"user": userResponse,
@@ -138,6 +160,8 @@ func (userController UserController) Update(ctx *gin.Context) {
 		return
 	}
 
+	userController.RistrettoCache.Del("users", fmt.Sprintf("user/%d", id))
+
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d updated successfully", id), responses.FromDomain(userDomainn))
 }
 
@@ -150,6 +174,8 @@ func (userController UserController) Delete(ctx *gin.Context) {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	userController.RistrettoCache.Del("users", fmt.Sprintf("user/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d deleted successfully", id), nil)
 }

@@ -4,9 +4,11 @@ import (
 	"time"
 
 	books "github.com/snykk/golib_backend/usecases/books"
+	"gorm.io/gorm"
 )
 
 type Book struct {
+	gorm.Model
 	Id          int
 	Title       string
 	Description string
@@ -15,6 +17,7 @@ type Book struct {
 	ISBN        string
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 func (book *Book) ToDomain() books.Domain {

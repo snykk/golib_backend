@@ -10,16 +10,19 @@ import (
 	"github.com/snykk/golib_backend/controllers"
 	"github.com/snykk/golib_backend/controllers/books/requests"
 	"github.com/snykk/golib_backend/controllers/books/responses"
+	"github.com/snykk/golib_backend/datasources/cache"
 	book "github.com/snykk/golib_backend/usecases/books"
 )
 
 type BookController struct {
-	BookUsecase book.Usecase
+	BookUsecase    book.Usecase
+	RistrettoCache cache.RistrettoCache
 }
 
-func NewBookController(bookUsecase book.Usecase) *BookController {
+func NewBookController(bookUsecase book.Usecase, ristrettoCache cache.RistrettoCache) *BookController {
 	return &BookController{
-		bookUsecase,
+		BookUsecase:    bookUsecase,
+		RistrettoCache: ristrettoCache,
 	}
 }
 
@@ -33,7 +36,7 @@ func isInsertedBookValid(request *requests.BookRequest) (bool, error) {
 
 }
 
-func (controller BookController) Store(ctx *gin.Context) {
+func (bookController BookController) Store(ctx *gin.Context) {
 	var bookRequest requests.BookRequest
 
 	if err := ctx.ShouldBindJSON(&bookRequest); err != nil {
@@ -47,7 +50,7 @@ func (controller BookController) Store(ctx *gin.Context) {
 	}
 
 	ctxx := ctx.Request.Context()
-	b, err := controller.BookUsecase.Store(ctxx, bookRequest.ToDomain())
+	b, err := bookController.BookUsecase.Store(ctxx, bookRequest.ToDomain())
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -58,42 +61,61 @@ func (controller BookController) Store(ctx *gin.Context) {
 	})
 }
 
-func (controller BookController) GetAll(ctx *gin.Context) {
-	listOfBooks, err := controller.BookUsecase.GetAll()
+func (bookController BookController) GetAll(ctx *gin.Context) {
+	if val := bookController.RistrettoCache.Get("books"); val != nil {
+		controllers.NewSuccessResponse(ctx, "book data fetched successfully", map[string]interface{}{
+			"books": val,
+		})
+		return
+	}
+
+	listOfBooks, err := bookController.BookUsecase.GetAll()
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	var books []responses.BookResponse
-	for _, val := range listOfBooks {
-		books = append(books, responses.FromDomain(val))
-	}
+	bookResponses := responses.ToResponseList(listOfBooks)
 
-	if books == nil {
+	if bookResponses == nil {
 		controllers.NewSuccessResponse(ctx, "book data is empty", []int{})
 		return
 	}
 
-	controllers.NewSuccessResponse(ctx, "book data fetched successfully", books)
+	bookController.RistrettoCache.Set("books", bookResponses)
+
+	controllers.NewSuccessResponse(ctx, "book data fetched successfully", map[string]interface{}{
+		"books": bookResponses,
+	})
 }
 
-func (controller BookController) GetById(ctx *gin.Context) {
+func (bookController BookController) GetById(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
+	if val := bookController.RistrettoCache.Get(fmt.Sprintf("book/%d", id)); val != nil {
+		controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d fetched successfully", id), map[string]interface{}{
+			"book": val,
+		})
+		return
+	}
+
 	ctxx := ctx.Request.Context()
 
-	bookDomain, err := controller.BookUsecase.GetById(ctxx, id)
+	bookDomain, err := bookController.BookUsecase.GetById(ctxx, id)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
 
+	bookResponse := responses.FromDomain(bookDomain)
+
+	bookController.RistrettoCache.Set(fmt.Sprintf("book/%d", id), bookResponse)
+
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d fetched successfully", id), map[string]interface{}{
-		"book": responses.FromDomain(bookDomain),
+		"book": bookResponse,
 	})
 }
 
-func (controller BookController) Update(ctx *gin.Context) {
+func (bookController BookController) Update(ctx *gin.Context) {
 	var bookUpdateRequest requests.BookUpdateRequest
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
@@ -104,25 +126,29 @@ func (controller BookController) Update(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 	bookDomain := bookUpdateRequest.ToDomain()
-	newBook, err := controller.BookUsecase.Update(ctxx, bookDomain, id)
+	newBook, err := bookController.BookUsecase.Update(ctxx, bookDomain, id)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
+
+	bookController.RistrettoCache.Del("books", fmt.Sprintf("book/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d updated successfully", id), map[string]interface{}{
 		"book": responses.FromDomain(newBook),
 	})
 }
 
-func (controller BookController) Delete(ctx *gin.Context) {
+func (bookController BookController) Delete(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	ctxx := ctx.Request.Context()
-	if err := controller.BookUsecase.Delete(ctxx, id); err != nil {
+	if err := bookController.BookUsecase.Delete(ctxx, id); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
+
+	bookController.RistrettoCache.Del("books", fmt.Sprintf("book/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d deleted successfully", id), nil)
 }

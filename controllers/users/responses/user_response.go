@@ -41,10 +41,10 @@ func FromDomain(u users.Domain) UserResponse {
 	}
 }
 
-func ToResponseList(domains *[]users.Domain) []UserResponse {
+func ToResponseList(domains []users.Domain) []UserResponse {
 	var result []UserResponse
 
-	for _, val := range *domains {
+	for _, val := range domains {
 		result = append(result, FromDomain(val))
 	}
 

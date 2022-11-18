@@ -28,16 +28,20 @@ func InitializeRouter(conn *gorm.DB) (router *gin.Engine) {
 
 	// CACHE
 	redisCache := cache.NewRedisCache(config.AppConfig.REDISHost, 0, config.AppConfig.REDISPassword, time.Duration(config.AppConfig.REDISExpired))
+	ristrettoCache, err := cache.NewRistrettoCache()
+	if err != nil {
+		panic(err)
+	}
 
 	// user route
 	userRepository := userRepository.NewUserRepository(conn)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)
-	userController := userController.NewUserController(userUsecase, redisCache)
+	userController := userController.NewUserController(userUsecase, redisCache, ristrettoCache)
 
 	// book route
 	bookRepository := bookRepository.NewBookRepository(conn)
 	bookUsecase := bookUsecase.NewBookUsecase(bookRepository)
-	bookController := bookController.NewBookController(bookUsecase)
+	bookController := bookController.NewBookController(bookUsecase, ristrettoCache)
 
 	// ===============> LIST OF ROUTE <==================
 	// => Root

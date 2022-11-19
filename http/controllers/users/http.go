@@ -7,51 +7,49 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/controllers"
-	"github.com/snykk/golib_backend/controllers/users/request"
-	"github.com/snykk/golib_backend/controllers/users/responses"
 	"github.com/snykk/golib_backend/datasources/cache"
-	"github.com/snykk/golib_backend/usecases/users"
+	"github.com/snykk/golib_backend/domains/users"
+	"github.com/snykk/golib_backend/http/controllers"
+	"github.com/snykk/golib_backend/http/controllers/users/request"
+	"github.com/snykk/golib_backend/http/controllers/users/responses"
 	"github.com/snykk/golib_backend/utils/otp"
-
-	validator "github.com/go-playground/validator/v10"
 )
 
-type UserController struct {
+type UserController interface {
+	Regis(ctx *gin.Context)
+	Login(ctx *gin.Context)
+	GetAll(ctx *gin.Context)
+	GetById(ctx *gin.Context)
+	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
+	SendOTP(ctx *gin.Context)
+	VerifOTP(ctx *gin.Context)
+}
+
+type userController struct {
 	UserUsecase    users.Usecase
 	RedisCache     cache.RedisCache
 	RistrettoCache cache.RistrettoCache
 }
 
-func NewUserController(usecase users.Usecase, redisCache cache.RedisCache, ristrettoCache cache.RistrettoCache) *UserController {
-	return &UserController{
+func NewUserController(usecase users.Usecase, redisCache cache.RedisCache, ristrettoCache cache.RistrettoCache) UserController {
+	return &userController{
 		UserUsecase:    usecase,
 		RedisCache:     redisCache,
 		RistrettoCache: ristrettoCache,
 	}
 }
 
-func validateRequest(request interface{}) error {
-	validator := validator.New()
-	err := validator.Struct(request)
-	return err
-}
-
-func (userController UserController) Regis(ctx *gin.Context) {
+func (c userController) Regis(ctx *gin.Context) {
 	var UserRegisRequest request.UserRegisRequest
 	if err := ctx.ShouldBindJSON(&UserRegisRequest); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := validateRequest(UserRegisRequest); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	ctxx := ctx.Request.Context()
 	userDomain := UserRegisRequest.ToDomain()
-	userDomainn, err := userController.UserUsecase.Store(ctxx, &userDomain)
+	userDomainn, err := c.UserUsecase.Store(ctxx, &userDomain)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -62,20 +60,15 @@ func (userController UserController) Regis(ctx *gin.Context) {
 	})
 }
 
-func (userController UserController) Login(ctx *gin.Context) {
+func (c userController) Login(ctx *gin.Context) {
 	var UserLoginRequest request.UserLoginRequest
 	if err := ctx.ShouldBindJSON(&UserLoginRequest); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
-	if err := validateRequest(UserLoginRequest); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	ctxx := ctx.Request.Context()
-	userDomain, err := userController.UserUsecase.Login(ctxx, UserLoginRequest.ToDomain())
+	userDomain, err := c.UserUsecase.Login(ctxx, UserLoginRequest.ToDomain())
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -84,15 +77,15 @@ func (userController UserController) Login(ctx *gin.Context) {
 	controllers.NewSuccessResponse(ctx, "login success", responses.FromDomainLogin(userDomain))
 }
 
-func (userController UserController) GetAll(ctx *gin.Context) {
-	if val := userController.RistrettoCache.Get("users"); val != nil {
+func (c userController) GetAll(ctx *gin.Context) {
+	if val := c.RistrettoCache.Get("users"); val != nil {
 		controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
 			"users": val,
 		})
 		return
 	}
 
-	usersFromUseCase, err := userController.UserUsecase.GetAll()
+	usersFromUseCase, err := c.UserUsecase.GetAll()
 
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
@@ -108,16 +101,16 @@ func (userController UserController) GetAll(ctx *gin.Context) {
 
 	userResponses := responses.ToResponseList(usersFromUseCase)
 
-	userController.RistrettoCache.Set("users", userResponses)
+	go c.RistrettoCache.Set("users", userResponses)
 
 	controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
 		"users": userResponses,
 	})
 }
 
-func (userController UserController) GetById(ctx *gin.Context) {
+func (c userController) GetById(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
-	if val := userController.RistrettoCache.Get(fmt.Sprintf("user/%d", id)); val != nil {
+	if val := c.RistrettoCache.Get(fmt.Sprintf("user/%d", id)); val != nil {
 		controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
 			"user": val,
 		})
@@ -126,7 +119,7 @@ func (userController UserController) GetById(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 	authHeader := ctx.GetHeader("Authorization")
-	userFromUsecase, err := userController.UserUsecase.GetById(ctxx, id, authHeader)
+	userFromUsecase, err := c.UserUsecase.GetById(ctxx, id, authHeader)
 
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
@@ -135,14 +128,14 @@ func (userController UserController) GetById(ctx *gin.Context) {
 
 	userResponse := responses.FromDomain(userFromUsecase)
 
-	userController.RistrettoCache.Set(fmt.Sprintf("user/%d", id), userResponse)
+	go c.RistrettoCache.Set(fmt.Sprintf("user/%d", id), userResponse)
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
 		"user": userResponse,
 	})
 }
 
-func (userController UserController) Update(ctx *gin.Context) {
+func (c userController) Update(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	var userRequest request.UserRequest
 
@@ -153,34 +146,34 @@ func (userController UserController) Update(ctx *gin.Context) {
 
 	userDomain := userRequest.ToDomain()
 	ctxx := ctx.Request.Context()
-	userDomainn, err := userController.UserUsecase.Update(ctxx, &userDomain, id)
+	userDomainn, err := c.UserUsecase.Update(ctxx, &userDomain, id)
 
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	userController.RistrettoCache.Del("users", fmt.Sprintf("user/%d", id))
+	go c.RistrettoCache.Del("users", fmt.Sprintf("user/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d updated successfully", id), responses.FromDomain(userDomainn))
 }
 
-func (userController UserController) Delete(ctx *gin.Context) {
+func (c userController) Delete(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	ctxx := ctx.Request.Context()
 
-	err := userController.UserUsecase.Delete(ctxx, id)
+	err := c.UserUsecase.Delete(ctxx, id)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	userController.RistrettoCache.Del("users", fmt.Sprintf("user/%d", id))
+	go c.RistrettoCache.Del("users", fmt.Sprintf("user/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d deleted successfully", id), nil)
 }
 
-func (userController UserController) SendOTP(ctx *gin.Context) {
+func (c userController) SendOTP(ctx *gin.Context) {
 	var userOTP request.UserSendOTP
 
 	if err := ctx.ShouldBindJSON(&userOTP); err != nil {
@@ -188,13 +181,8 @@ func (userController UserController) SendOTP(ctx *gin.Context) {
 		return
 	}
 
-	if err := validateRequest(userOTP); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	ctxx := ctx.Request.Context()
-	userDom, err := userController.UserUsecase.GetByEmail(ctxx, userOTP.Email)
+	userDom, err := c.UserUsecase.GetByEmail(ctxx, userOTP.Email)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -216,12 +204,12 @@ func (userController UserController) SendOTP(ctx *gin.Context) {
 	}
 
 	otpKey := fmt.Sprintf("user_otp:%s", userOTP.Email)
-	userController.RedisCache.Set(otpKey, code)
+	go c.RedisCache.Set(otpKey, code)
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("otp code has been send to %s", userOTP.Email), nil)
 }
 
-func (userController UserController) VerifOTP(ctx *gin.Context) {
+func (c userController) VerifOTP(ctx *gin.Context) {
 	var userOTP request.UserVerifOTP
 
 	if err := ctx.ShouldBindJSON(&userOTP); err != nil {
@@ -229,13 +217,8 @@ func (userController UserController) VerifOTP(ctx *gin.Context) {
 		return
 	}
 
-	if err := validateRequest(userOTP); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	ctxx := ctx.Request.Context()
-	userDom, err := userController.UserUsecase.GetByEmail(ctxx, userOTP.Email)
+	userDom, err := c.UserUsecase.GetByEmail(ctxx, userOTP.Email)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
@@ -247,19 +230,19 @@ func (userController UserController) VerifOTP(ctx *gin.Context) {
 	}
 
 	otpKey := fmt.Sprintf("user_otp:%s", userOTP.Email)
-	otpCode := userController.RedisCache.Get(otpKey)
+	otpCode := c.RedisCache.Get(otpKey)
 
 	if otpCode != userOTP.Code {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, "invalid otp code")
 		return
 	}
 
-	if err := userController.UserUsecase.ActivateUser(ctxx, userOTP.Email); err != nil {
+	if err := c.UserUsecase.ActivateUser(ctxx, userOTP.Email); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	userController.RedisCache.Del(otpKey)
+	go c.RedisCache.Del(otpKey)
 
 	controllers.NewSuccessResponse(ctx, "otp verification success", nil)
 }

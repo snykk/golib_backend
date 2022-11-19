@@ -3,7 +3,7 @@ package users
 import (
 	"time"
 
-	"github.com/snykk/golib_backend/usecases/users"
+	"github.com/snykk/golib_backend/domains/users"
 	"gorm.io/gorm"
 )
 

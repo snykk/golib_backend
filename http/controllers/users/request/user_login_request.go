@@ -1,10 +1,10 @@
 package request
 
-import users "github.com/snykk/golib_backend/usecases/users"
+import users "github.com/snykk/golib_backend/domains/users"
 
 type UserLoginRequest struct {
-	Email    string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
 }
 
 func (u *UserLoginRequest) ToDomain() *users.Domain {

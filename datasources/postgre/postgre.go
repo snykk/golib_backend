@@ -1,6 +1,7 @@
 package postgres
 
 import (
+	"errors"
 	"fmt"
 	"log"
 
@@ -25,7 +26,7 @@ func DbMigrate(db *gorm.DB) {
 	db.AutoMigrate(&userRepository.User{})
 }
 
-func (config *ConfigDB) InitializeDatabase() *gorm.DB {
+func (config *ConfigDB) InitializeDatabase() (*gorm.DB, error) {
 	var dsn string
 
 	if configEnv.AppConfig.Environment == "development" {
@@ -39,8 +40,7 @@ func (config *ConfigDB) InitializeDatabase() *gorm.DB {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 
 	if err != nil {
-		log.Println("[INIT] failed connecting to PostgreSQL")
-		return nil
+		return nil, errors.New("[INIT] failed connecting to PostgreSQL")
 	}
 	log.Println("[INIT] connected to PostgreSQL")
 
@@ -48,5 +48,5 @@ func (config *ConfigDB) InitializeDatabase() *gorm.DB {
 
 	log.Println("[INIT] migration success")
 
-	return db
+	return db, nil
 }

@@ -1,6 +1,6 @@
 package request
 
-import users "github.com/snykk/golib_backend/usecases/users"
+import users "github.com/snykk/golib_backend/domains/users"
 
 type UserRequest struct {
 	Name     string `json:"name"`

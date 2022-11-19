@@ -6,37 +6,34 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
-	"github.com/go-playground/validator/v10"
-	"github.com/snykk/golib_backend/controllers"
-	"github.com/snykk/golib_backend/controllers/books/requests"
-	"github.com/snykk/golib_backend/controllers/books/responses"
 	"github.com/snykk/golib_backend/datasources/cache"
-	book "github.com/snykk/golib_backend/usecases/books"
+	book "github.com/snykk/golib_backend/domains/books"
+	"github.com/snykk/golib_backend/http/controllers"
+	"github.com/snykk/golib_backend/http/controllers/books/requests"
+	"github.com/snykk/golib_backend/http/controllers/books/responses"
 )
 
-type BookController struct {
+type BookController interface {
+	Store(ctx *gin.Context)
+	GetAll(ctx *gin.Context)
+	GetById(ctx *gin.Context)
+	Update(ctx *gin.Context)
+	Delete(ctx *gin.Context)
+}
+
+type bookController struct {
 	BookUsecase    book.Usecase
 	RistrettoCache cache.RistrettoCache
 }
 
-func NewBookController(bookUsecase book.Usecase, ristrettoCache cache.RistrettoCache) *BookController {
-	return &BookController{
+func NewBookController(bookUsecase book.Usecase, ristrettoCache cache.RistrettoCache) BookController {
+	return &bookController{
 		BookUsecase:    bookUsecase,
 		RistrettoCache: ristrettoCache,
 	}
 }
 
-func isInsertedBookValid(request *requests.BookRequest) (bool, error) {
-	validate := validator.New()
-	err := validate.Struct(request)
-	if err != nil {
-		return false, err
-	}
-	return true, nil
-
-}
-
-func (bookController BookController) Store(ctx *gin.Context) {
+func (bookC bookController) Store(ctx *gin.Context) {
 	var bookRequest requests.BookRequest
 
 	if err := ctx.ShouldBindJSON(&bookRequest); err != nil {
@@ -44,13 +41,8 @@ func (bookController BookController) Store(ctx *gin.Context) {
 		return
 	}
 
-	if isValid, err := isInsertedBookValid(&bookRequest); !isValid {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
 	ctxx := ctx.Request.Context()
-	b, err := bookController.BookUsecase.Store(ctxx, bookRequest.ToDomain())
+	b, err := bookC.BookUsecase.Store(ctxx, bookRequest.ToDomain())
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -61,15 +53,15 @@ func (bookController BookController) Store(ctx *gin.Context) {
 	})
 }
 
-func (bookController BookController) GetAll(ctx *gin.Context) {
-	if val := bookController.RistrettoCache.Get("books"); val != nil {
+func (bookC bookController) GetAll(ctx *gin.Context) {
+	if val := bookC.RistrettoCache.Get("books"); val != nil {
 		controllers.NewSuccessResponse(ctx, "book data fetched successfully", map[string]interface{}{
 			"books": val,
 		})
 		return
 	}
 
-	listOfBooks, err := bookController.BookUsecase.GetAll()
+	listOfBooks, err := bookC.BookUsecase.GetAll()
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -82,16 +74,16 @@ func (bookController BookController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	bookController.RistrettoCache.Set("books", bookResponses)
+	go bookC.RistrettoCache.Set("books", bookResponses)
 
 	controllers.NewSuccessResponse(ctx, "book data fetched successfully", map[string]interface{}{
 		"books": bookResponses,
 	})
 }
 
-func (bookController BookController) GetById(ctx *gin.Context) {
+func (bookC bookController) GetById(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
-	if val := bookController.RistrettoCache.Get(fmt.Sprintf("book/%d", id)); val != nil {
+	if val := bookC.RistrettoCache.Get(fmt.Sprintf("book/%d", id)); val != nil {
 		controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d fetched successfully", id), map[string]interface{}{
 			"book": val,
 		})
@@ -100,7 +92,7 @@ func (bookController BookController) GetById(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 
-	bookDomain, err := bookController.BookUsecase.GetById(ctxx, id)
+	bookDomain, err := bookC.BookUsecase.GetById(ctxx, id)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
 		return
@@ -108,14 +100,14 @@ func (bookController BookController) GetById(ctx *gin.Context) {
 
 	bookResponse := responses.FromDomain(bookDomain)
 
-	bookController.RistrettoCache.Set(fmt.Sprintf("book/%d", id), bookResponse)
+	go bookC.RistrettoCache.Set(fmt.Sprintf("book/%d", id), bookResponse)
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d fetched successfully", id), map[string]interface{}{
 		"book": bookResponse,
 	})
 }
 
-func (bookController BookController) Update(ctx *gin.Context) {
+func (bookC bookController) Update(ctx *gin.Context) {
 	var bookUpdateRequest requests.BookUpdateRequest
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
@@ -126,29 +118,29 @@ func (bookController BookController) Update(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 	bookDomain := bookUpdateRequest.ToDomain()
-	newBook, err := bookController.BookUsecase.Update(ctxx, bookDomain, id)
+	newBook, err := bookC.BookUsecase.Update(ctxx, bookDomain, id)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
 
-	bookController.RistrettoCache.Del("books", fmt.Sprintf("book/%d", id))
+	go bookC.RistrettoCache.Del("books", fmt.Sprintf("book/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d updated successfully", id), map[string]interface{}{
 		"book": responses.FromDomain(newBook),
 	})
 }
 
-func (bookController BookController) Delete(ctx *gin.Context) {
+func (bookC bookController) Delete(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	ctxx := ctx.Request.Context()
-	if err := bookController.BookUsecase.Delete(ctxx, id); err != nil {
+	if err := bookC.BookUsecase.Delete(ctxx, id); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
 		return
 	}
 
-	bookController.RistrettoCache.Del("books", fmt.Sprintf("book/%d", id))
+	go bookC.RistrettoCache.Del("books", fmt.Sprintf("book/%d", id))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("book data with id %d deleted successfully", id), nil)
 }

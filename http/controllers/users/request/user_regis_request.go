@@ -1,11 +1,11 @@
 package request
 
-import users "github.com/snykk/golib_backend/usecases/users"
+import users "github.com/snykk/golib_backend/domains/users"
 
 type UserRegisRequest struct {
-	Name     string `json:"name" validate:"required"`
-	Email    string `json:"email" validate:"required"`
-	Password string `json:"password" validate:"required"`
+	Name     string `json:"name" binding:"required"`
+	Email    string `json:"email" binding:"required"`
+	Password string `json:"password" binding:"required"`
 	IsAdmin  bool   `json:"is_admin"`
 }
 

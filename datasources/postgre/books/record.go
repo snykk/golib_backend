@@ -3,7 +3,7 @@ package books
 import (
 	"time"
 
-	books "github.com/snykk/golib_backend/usecases/books"
+	books "github.com/snykk/golib_backend/domains/books"
 	"gorm.io/gorm"
 )
 

@@ -3,64 +3,64 @@ package users
 import (
 	"context"
 
-	"github.com/snykk/golib_backend/usecases/users"
+	"github.com/snykk/golib_backend/domains/users"
 
 	"gorm.io/gorm"
 )
 
-type UserRepository struct {
+type userRepository struct {
 	Conn *gorm.DB
 }
 
 func NewUserRepository(conn *gorm.DB) users.Repository {
-	return &UserRepository{
+	return &userRepository{
 		conn,
 	}
 }
 
-func (userRepo UserRepository) Store(ctx context.Context, domain *users.Domain) (users.Domain, error) {
+func (userR userRepository) Store(ctx context.Context, domain *users.Domain) (users.Domain, error) {
 	var user = FromDomain(domain)
 
-	if err := userRepo.Conn.Create(&user).Error; err != nil {
+	if err := userR.Conn.Create(&user).Error; err != nil {
 		return users.Domain{}, err
 	}
 
 	return user.ToDomain(), nil
 }
 
-func (userRepo UserRepository) GetAll() ([]users.Domain, error) {
+func (userR userRepository) GetAll() ([]users.Domain, error) {
 	var usersFromDB []User
 
-	if err := userRepo.Conn.Find(&usersFromDB).Error; err != nil {
+	if err := userR.Conn.Find(&usersFromDB).Error; err != nil {
 		return []users.Domain{}, err
 	}
 
 	return ToArrayOfDomain(&usersFromDB), nil
 }
 
-func (userRepo UserRepository) GetById(ctx context.Context, id int) (users.Domain, error) {
+func (userR userRepository) GetById(ctx context.Context, id int) (users.Domain, error) {
 	var user User
-	if err := userRepo.Conn.First(&user, id).Error; err != nil {
+	if err := userR.Conn.First(&user, id).Error; err != nil {
 		return users.Domain{}, err
 	}
 
 	return user.ToDomain(), nil
 }
 
-func (userRepo UserRepository) Update(ctx context.Context, domain *users.Domain) (err error) {
+func (userR userRepository) Update(ctx context.Context, domain *users.Domain) (err error) {
 	user := FromDomain(domain)
-	err = userRepo.Conn.Model(&User{}).Model(&user).Updates(&user).Error
+	err = userR.Conn.Model(&User{}).Model(&user).Updates(&user).Error
 	return
 }
 
-func (userRepo UserRepository) Delete(ctx context.Context, id int) (err error) {
-	err = userRepo.Conn.Delete(&User{}, id).Error
+func (userR userRepository) Delete(ctx context.Context, id int) (err error) {
+	err = userR.Conn.Delete(&User{}, id).Error
 	return
 }
 
-func (userRepo UserRepository) GetByEmail(ctx context.Context, domain *users.Domain) (users.Domain, error) {
+func (userR userRepository) GetByEmail(ctx context.Context, domain *users.Domain) (users.Domain, error) {
 	var result User
-	if err := userRepo.Conn.First(&result, "email = ?", domain.Email).Error; err != nil {
+	if err := userR.Conn.First(&result, "email = ?", domain.Email).Error; err != nil {
 		return users.Domain{}, err
 	}
 

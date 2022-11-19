@@ -1,21 +1,24 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"os/signal"
 	"time"
 
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/app/routes"
 	"github.com/snykk/golib_backend/config"
+	"github.com/snykk/golib_backend/http/routes"
 
 	postgre "github.com/snykk/golib_backend/datasources/postgre"
 )
 
 func init() {
 	if err := config.InitializeAppConfig(); err != nil {
-		log.Fatal(err)
+		log.Fatalln(err)
 	}
 
 	if !config.AppConfig.Debug {
@@ -33,7 +36,10 @@ func main() {
 		DB_DSN:      config.AppConfig.DBDsn,
 	}
 
-	conn := configDB.InitializeDatabase()
+	conn, err := configDB.InitializeDatabase()
+	if err != nil {
+		log.Fatalln(err)
+	}
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", config.AppConfig.Port),
@@ -43,7 +49,19 @@ func main() {
 		MaxHeaderBytes: 1 << 20,
 	}
 
-	if err := server.ListenAndServe(); err != nil {
-		log.Fatalln(err)
-	}
+	go func() {
+		if err := server.ListenAndServe(); err != nil {
+			log.Fatalln(err)
+		}
+	}()
+
+	quit := make(chan os.Signal, 1)
+	signal.Notify(quit, os.Interrupt, os.Interrupt)
+
+	<-quit
+
+	ctx, shutdown := context.WithTimeout(context.Background(), 5*time.Second)
+	defer shutdown()
+
+	server.Shutdown(ctx)
 }

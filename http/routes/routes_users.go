@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/utils/token"
+	"github.com/snykk/golib_backend/packages/token"
 	"gorm.io/gorm"
 
-	"github.com/snykk/golib_backend/datasources/cache"
-	userRepository "github.com/snykk/golib_backend/datasources/postgre/users"
+	userRepository "github.com/snykk/golib_backend/datasources/databases/users"
 	userUsecase "github.com/snykk/golib_backend/domains/users"
 	userController "github.com/snykk/golib_backend/http/controllers/users"
+	"github.com/snykk/golib_backend/packages/cache"
 )
 
 type usersRoutes struct {
@@ -20,7 +20,7 @@ type usersRoutes struct {
 
 func NewUsersRoute(db *gorm.DB, jwtService token.JWTService, redisCache cache.RedisCache, ristrettoCache cache.RistrettoCache, router *gin.Engine, authMiddleware gin.HandlerFunc) *usersRoutes {
 	// user route
-	userRepository := userRepository.NewUserRepository(db)
+	userRepository := userRepository.NewPostgreUserRepository(db)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)
 	userController := userController.NewUserController(userUsecase, redisCache, ristrettoCache)
 	return &usersRoutes{controller: userController, router: router, db: db, authMiddleware: authMiddleware}

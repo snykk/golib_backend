@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/utils/token"
+	"github.com/snykk/golib_backend/packages/token"
 	"gorm.io/gorm"
 
-	"github.com/snykk/golib_backend/datasources/cache"
-	bookRepository "github.com/snykk/golib_backend/datasources/postgre/books"
+	bookRepository "github.com/snykk/golib_backend/datasources/databases/books"
 	bookUseCase "github.com/snykk/golib_backend/domains/books"
 	bookController "github.com/snykk/golib_backend/http/controllers/books"
+	"github.com/snykk/golib_backend/packages/cache"
 )
 
 type booksRoutes struct {
@@ -21,7 +21,7 @@ type booksRoutes struct {
 
 func NewBooksRoute(db *gorm.DB, jwtService token.JWTService, ristrettoCache cache.RistrettoCache, router *gin.Engine, authMiddleware gin.HandlerFunc, authAdminMiddleware gin.HandlerFunc) *booksRoutes {
 	// user route
-	bookRepository := bookRepository.NewBookRepository(db)
+	bookRepository := bookRepository.NewPostgreBookRepository(db)
 	bookUseCase := bookUseCase.NewBookUsecase(bookRepository)
 	bookController := bookController.NewBookController(bookUseCase, ristrettoCache)
 	return &booksRoutes{controller: bookController, router: router, db: db, authMiddleware: authMiddleware, authAdminMiddleware: authAdminMiddleware}

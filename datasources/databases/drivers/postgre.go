@@ -1,4 +1,4 @@
-package postgres
+package drivers
 
 import (
 	"errors"
@@ -6,13 +6,13 @@ import (
 	"log"
 
 	configEnv "github.com/snykk/golib_backend/config"
-	bookRepository "github.com/snykk/golib_backend/datasources/postgre/books"
-	userRepository "github.com/snykk/golib_backend/datasources/postgre/users"
+	bookRepository "github.com/snykk/golib_backend/datasources/databases/books"
+	userRepository "github.com/snykk/golib_backend/datasources/databases/users"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 )
 
-type ConfigDB struct {
+type ConfigPostgreSQL struct {
 	DB_Username string
 	DB_Password string
 	DB_Host     string
@@ -21,12 +21,16 @@ type ConfigDB struct {
 	DB_DSN      string
 }
 
-func DbMigrate(db *gorm.DB) {
-	db.AutoMigrate(&bookRepository.Book{})
-	db.AutoMigrate(&userRepository.User{})
+func DbMigrate(db *gorm.DB) (err error) {
+	err = db.AutoMigrate(&bookRepository.Book{})
+	if err != nil {
+		return err
+	}
+	err = db.AutoMigrate(&userRepository.User{})
+	return
 }
 
-func (config *ConfigDB) InitializeDatabase() (*gorm.DB, error) {
+func (config *ConfigPostgreSQL) InitializeDatabasePostgreSQL() (*gorm.DB, error) {
 	var dsn string
 
 	if configEnv.AppConfig.Environment == "development" {
@@ -44,7 +48,10 @@ func (config *ConfigDB) InitializeDatabase() (*gorm.DB, error) {
 	}
 	log.Println("[INIT] connected to PostgreSQL")
 
-	DbMigrate(db)
+	err = DbMigrate(db)
+	if err != nil {
+		return nil, errors.New("[INIT] failed when running migration")
+	}
 
 	log.Println("[INIT] migration success")
 

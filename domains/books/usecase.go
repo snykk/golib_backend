@@ -4,18 +4,18 @@ import (
 	"context"
 )
 
-type BookUsecase struct {
-	Repo Repository
+type bookUsecase struct {
+	repo Repository
 }
 
 func NewBookUsecase(repo Repository) Usecase {
-	return &BookUsecase{
+	return &bookUsecase{
 		repo,
 	}
 }
 
-func (bookUC *BookUsecase) GetAll() ([]Domain, error) {
-	books, err := bookUC.Repo.GetAll()
+func (uc *bookUsecase) GetAll() ([]Domain, error) {
+	books, err := uc.repo.GetAll()
 
 	if err != nil {
 		return []Domain{}, err
@@ -24,16 +24,16 @@ func (bookUC *BookUsecase) GetAll() ([]Domain, error) {
 	return books, nil
 }
 
-func (bookUC *BookUsecase) Store(ctx context.Context, book *Domain) (Domain, error) {
-	result, err := bookUC.Repo.Store(ctx, book)
+func (uc *bookUsecase) Store(ctx context.Context, book *Domain) (Domain, error) {
+	result, err := uc.repo.Store(ctx, book)
 	if err != nil {
 		return result, err
 	}
 	return result, nil
 }
 
-func (bookUC *BookUsecase) GetById(ctx context.Context, id int) (Domain, error) {
-	result, err := bookUC.Repo.GetById(ctx, id)
+func (uc *bookUsecase) GetById(ctx context.Context, id int) (Domain, error) {
+	result, err := uc.repo.GetById(ctx, id)
 
 	if err != nil {
 		return Domain{}, err
@@ -42,23 +42,23 @@ func (bookUC *BookUsecase) GetById(ctx context.Context, id int) (Domain, error) 
 	return result, nil
 }
 
-func (bookUC *BookUsecase) Update(ctx context.Context, book *Domain, id int) (Domain, error) {
+func (uc *bookUsecase) Update(ctx context.Context, book *Domain, id int) (Domain, error) {
 	book.ID = id
-	if err := bookUC.Repo.Update(ctx, book); err != nil {
+	if err := uc.repo.Update(ctx, book); err != nil {
 		return Domain{}, err
 	}
 
-	newBook, err := bookUC.Repo.GetById(ctx, id)
+	newBook, err := uc.repo.GetById(ctx, id)
 
 	return newBook, err
 }
 
-func (bookUC *BookUsecase) Delete(ctx context.Context, id int) error {
-	_, err := bookUC.Repo.GetById(ctx, id)
+func (uc *bookUsecase) Delete(ctx context.Context, id int) error {
+	_, err := uc.repo.GetById(ctx, id)
 	if err != nil { // check wheter data is exists or not
 		return err
 	}
-	err = bookUC.Repo.Delete(ctx, id)
+	err = uc.repo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}

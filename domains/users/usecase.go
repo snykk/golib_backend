@@ -5,25 +5,25 @@ import (
 	"errors"
 
 	"github.com/snykk/golib_backend/constants"
-	encrypt "github.com/snykk/golib_backend/utils/hash"
-	"github.com/snykk/golib_backend/utils/token"
+	"github.com/snykk/golib_backend/helpers"
+	"github.com/snykk/golib_backend/packages/token"
 )
 
-type UserUsecase struct {
+type userUsecase struct {
 	jwtService token.JWTService
 	repo       Repository
 }
 
 func NewUserUsecase(repo Repository, jwtService token.JWTService) Usecase {
-	return &UserUsecase{
+	return &userUsecase{
 		jwtService: jwtService,
 		repo:       repo,
 	}
 }
 
-func (uc *UserUsecase) Store(ctx context.Context, domain *Domain) (Domain, error) {
+func (uc *userUsecase) Store(ctx context.Context, domain *Domain) (Domain, error) {
 	var err error
-	domain.Password, err = encrypt.GenerateHash(domain.Password)
+	domain.Password, err = helpers.GenerateHash(domain.Password)
 	if err != nil {
 		return Domain{}, err
 	}
@@ -36,7 +36,7 @@ func (uc *UserUsecase) Store(ctx context.Context, domain *Domain) (Domain, error
 	return user, nil
 }
 
-func (uc *UserUsecase) Login(ctx context.Context, domain *Domain) (Domain, error) {
+func (uc *userUsecase) Login(ctx context.Context, domain *Domain) (Domain, error) {
 	var err error
 
 	userDomain, err := uc.repo.GetByEmail(ctx, domain)
@@ -48,7 +48,7 @@ func (uc *UserUsecase) Login(ctx context.Context, domain *Domain) (Domain, error
 		return Domain{}, errors.New("account is not activated")
 	}
 
-	if !encrypt.ValidateHash(domain.Password, userDomain.Password) {
+	if !helpers.ValidateHash(domain.Password, userDomain.Password) {
 		return Domain{}, errors.New("invalid email or password")
 	}
 
@@ -65,7 +65,7 @@ func (uc *UserUsecase) Login(ctx context.Context, domain *Domain) (Domain, error
 	return userDomain, nil
 }
 
-func (uc *UserUsecase) GetAll() ([]Domain, error) {
+func (uc *userUsecase) GetAll() ([]Domain, error) {
 	usersFromRepo, err := uc.repo.GetAll()
 
 	if err != nil {
@@ -80,7 +80,7 @@ func (uc *UserUsecase) GetAll() ([]Domain, error) {
 	return usersFromRepo, err
 }
 
-func (uc *UserUsecase) GetById(ctx context.Context, id int, idClaims int) (Domain, error) {
+func (uc *userUsecase) GetById(ctx context.Context, id int, idClaims int) (Domain, error) {
 	user, err := uc.repo.GetById(ctx, id)
 	if err != nil {
 		return Domain{}, err
@@ -93,12 +93,12 @@ func (uc *UserUsecase) GetById(ctx context.Context, id int, idClaims int) (Domai
 	return user, nil
 }
 
-func (uc *UserUsecase) Update(ctx context.Context, domain *Domain, id int) (Domain, error) {
+func (uc *userUsecase) Update(ctx context.Context, domain *Domain, id int) (Domain, error) {
 	var err error
 	domain.ID = id
 
 	// if domain.Password != "" {
-	// 	if domain.Password, err = encrypt.GenerateHash(domain.Password); err != nil {
+	// 	if domain.Password, err = helpers.GenerateHash(domain.Password); err != nil {
 	// 		return Domain{}, err
 	// 	}
 	// }
@@ -112,7 +112,7 @@ func (uc *UserUsecase) Update(ctx context.Context, domain *Domain, id int) (Doma
 	return newUserFromDB, err
 }
 
-func (uc *UserUsecase) Delete(ctx context.Context, id int) error {
+func (uc *userUsecase) Delete(ctx context.Context, id int) error {
 	_, err := uc.repo.GetById(ctx, id)
 	if err != nil { // check wheter data is exists or not
 		return err
@@ -124,7 +124,7 @@ func (uc *UserUsecase) Delete(ctx context.Context, id int) error {
 	return nil
 }
 
-func (uc *UserUsecase) GetByEmail(ctx context.Context, email string) (Domain, error) {
+func (uc *userUsecase) GetByEmail(ctx context.Context, email string) (Domain, error) {
 	user, err := uc.repo.GetByEmail(ctx, &Domain{Email: email})
 	if err != nil {
 		return Domain{}, err
@@ -133,7 +133,7 @@ func (uc *UserUsecase) GetByEmail(ctx context.Context, email string) (Domain, er
 	return user, nil
 }
 
-func (uc *UserUsecase) ActivateUser(ctx context.Context, email string) (err error) {
+func (uc *userUsecase) ActivateUser(ctx context.Context, email string) (err error) {
 	user, err := uc.repo.GetByEmail(ctx, &Domain{Email: email})
 	if err != nil {
 		return err
@@ -146,7 +146,7 @@ func (uc *UserUsecase) ActivateUser(ctx context.Context, email string) (err erro
 	return
 }
 
-func (uc *UserUsecase) ChangePassword(ctx context.Context, domain *Domain, new_pass string, id int) (err error) {
+func (uc *userUsecase) ChangePassword(ctx context.Context, domain *Domain, new_pass string, id int) (err error) {
 	domain.ID = id
 
 	if domain.Password == new_pass {
@@ -158,11 +158,11 @@ func (uc *UserUsecase) ChangePassword(ctx context.Context, domain *Domain, new_p
 		return err
 	}
 
-	if !encrypt.ValidateHash(domain.Password, userDom.Password) {
+	if !helpers.ValidateHash(domain.Password, userDom.Password) {
 		return errors.New("incorrect password")
 	}
 
-	domain.Password, err = encrypt.GenerateHash(new_pass)
+	domain.Password, err = helpers.GenerateHash(new_pass)
 	if err != nil {
 		return err
 	}
@@ -170,7 +170,7 @@ func (uc *UserUsecase) ChangePassword(ctx context.Context, domain *Domain, new_p
 	return uc.repo.Update(ctx, domain)
 }
 
-func (uc *UserUsecase) ChangeEmail(ctx context.Context, domain *Domain, id int) (err error) {
+func (uc *userUsecase) ChangeEmail(ctx context.Context, domain *Domain, id int) (err error) {
 	domain.ID = id
 
 	userDom, _ := uc.repo.GetByEmail(ctx, domain)

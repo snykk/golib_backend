@@ -12,11 +12,11 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/config"
-	"github.com/snykk/golib_backend/datasources/cache"
-	postgre "github.com/snykk/golib_backend/datasources/postgre"
+	"github.com/snykk/golib_backend/datasources/databases/drivers"
 	"github.com/snykk/golib_backend/http/middlewares"
 	"github.com/snykk/golib_backend/http/routes"
-	"github.com/snykk/golib_backend/utils/token"
+	"github.com/snykk/golib_backend/packages/cache"
+	"github.com/snykk/golib_backend/packages/token"
 	"gorm.io/gorm"
 )
 
@@ -99,7 +99,7 @@ func (a *App) Run() error {
 
 func setupDatabse() (*gorm.DB, error) {
 	// Setup Config Databse
-	configDB := postgre.ConfigDB{
+	configDB := drivers.ConfigPostgreSQL{
 		DB_Username: config.AppConfig.DBUsername,
 		DB_Password: config.AppConfig.DBPassword,
 		DB_Host:     config.AppConfig.DBHost,
@@ -108,8 +108,8 @@ func setupDatabse() (*gorm.DB, error) {
 		DB_DSN:      config.AppConfig.DBDsn,
 	}
 
-	// Initialize Database PostgreSQL
-	conn, err := configDB.InitializeDatabase()
+	// Initialize Database driversSQL
+	conn, err := configDB.InitializeDatabasePostgreSQL()
 	if err != nil {
 		return nil, err
 	}

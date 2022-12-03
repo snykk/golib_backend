@@ -8,13 +8,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/constants"
-	"github.com/snykk/golib_backend/datasources/cache"
 	"github.com/snykk/golib_backend/domains/users"
+	"github.com/snykk/golib_backend/helpers"
 	"github.com/snykk/golib_backend/http/controllers"
 	"github.com/snykk/golib_backend/http/controllers/users/request"
 	"github.com/snykk/golib_backend/http/controllers/users/responses"
-	"github.com/snykk/golib_backend/utils/otp"
-	"github.com/snykk/golib_backend/utils/token"
+	"github.com/snykk/golib_backend/packages/cache"
+	"github.com/snykk/golib_backend/packages/token"
 )
 
 type UserController struct {
@@ -222,12 +222,12 @@ func (c *UserController) SendOTP(ctx *gin.Context) {
 		return
 	}
 
-	code, err := otp.GenerateCode(6)
+	code, err := helpers.GenerateCode(6)
 	if err != nil {
 		log.Println(err)
 	}
 
-	if err = otp.SendOTP(code, userOTP.Email); err != nil {
+	if err = helpers.SendOTP(code, userOTP.Email); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
@@ -319,12 +319,12 @@ func (c *UserController) ChangeEmail(ctx *gin.Context) {
 
 	go c.ristrettoCache.Del("users", fmt.Sprintf("user/%d", userClaims.UserID))
 
-	code, err := otp.GenerateCode(6)
+	code, err := helpers.GenerateCode(6)
 	if err != nil {
 		log.Println(err)
 	}
 
-	if err = otp.SendOTP(code, userDomain.Email); err != nil {
+	if err = helpers.SendOTP(code, userDomain.Email); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}

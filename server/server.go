@@ -10,9 +10,14 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/config"
+	"github.com/snykk/golib_backend/datasources/cache"
 	postgre "github.com/snykk/golib_backend/datasources/postgre"
+	"github.com/snykk/golib_backend/http/middlewares"
 	"github.com/snykk/golib_backend/http/routes"
+	"github.com/snykk/golib_backend/utils/token"
+	"gorm.io/gorm"
 )
 
 type App struct {
@@ -20,26 +25,39 @@ type App struct {
 }
 
 func NewApp() (*App, error) {
-	// Setup Config Databse
-	configDB := postgre.ConfigDB{
-		DB_Username: config.AppConfig.DBUsername,
-		DB_Password: config.AppConfig.DBPassword,
-		DB_Host:     config.AppConfig.DBHost,
-		DB_Port:     config.AppConfig.DBPort,
-		DB_Database: config.AppConfig.DBDatabase,
-		DB_DSN:      config.AppConfig.DBDsn,
-	}
-
-	// Initialize Database PostgreSQL
-	conn, err := configDB.InitializeDatabase()
+	// setup databases
+	conn, err := setupDatabse()
 	if err != nil {
 		return nil, err
 	}
 
+	// setup router
+	router := setupRouter()
+
+	// jwt service
+	jwtService := token.NewJWTService()
+
+	// cache
+	redisCache := cache.NewRedisCache(config.AppConfig.REDISHost, 0, config.AppConfig.REDISPassword, time.Duration(config.AppConfig.REDISExpired))
+	ristrettoCache, err := cache.NewRistrettoCache()
+	if err != nil {
+		panic(err)
+	}
+
+	// user middleware
+	authMiddleware := middlewares.NewAuthMiddleware(jwtService, false)
+	// admin middleware
+	authAdminMiddleware := middlewares.NewAuthMiddleware(jwtService, true)
+
+	// Routes
+	router.GET("/", routes.RootHandler)
+	routes.NewUsersRoute(conn, jwtService, redisCache, ristrettoCache, router, authMiddleware).UsersRoute()
+	routes.NewBooksRoute(conn, jwtService, ristrettoCache, router, authMiddleware, authAdminMiddleware).BooksRoute()
+
 	// setup http server
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", config.AppConfig.Port),
-		Handler:        routes.InitializeRouter(conn),
+		Handler:        router,
 		ReadTimeout:    10 * time.Second,
 		WriteTimeout:   10 * time.Second,
 		MaxHeaderBytes: 1 << 20,
@@ -51,6 +69,7 @@ func NewApp() (*App, error) {
 }
 
 func (a *App) Run() error {
+	// Gracefull Shutdown
 	go func() {
 		if err := a.httpServer.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 			log.Fatalf("Failed to listen and serve: %+v", err)
@@ -76,4 +95,30 @@ func (a *App) Run() error {
 	log.Println("[CLOSE] timeout of 5 seconds.")
 	log.Println("[CLOSE] server exiting")
 	return nil
+}
+
+func setupDatabse() (*gorm.DB, error) {
+	// Setup Config Databse
+	configDB := postgre.ConfigDB{
+		DB_Username: config.AppConfig.DBUsername,
+		DB_Password: config.AppConfig.DBPassword,
+		DB_Host:     config.AppConfig.DBHost,
+		DB_Port:     config.AppConfig.DBPort,
+		DB_Database: config.AppConfig.DBDatabase,
+		DB_DSN:      config.AppConfig.DBDsn,
+	}
+
+	// Initialize Database PostgreSQL
+	conn, err := configDB.InitializeDatabase()
+	if err != nil {
+		return nil, err
+	}
+
+	return conn, nil
+}
+
+func setupRouter() *gin.Engine {
+	router := gin.Default()
+	router.Use(middlewares.CORSMiddleware)
+	return router
 }

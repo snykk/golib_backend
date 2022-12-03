@@ -25,4 +25,9 @@ func NewErrorResponse(c *gin.Context, code int, err string) {
 		Status:  false,
 		Message: err,
 	})
+
+}
+
+func NewAbortResponse(c *gin.Context, message string) {
+	c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"status": false, "message": message})
 }

@@ -8,9 +8,11 @@ import (
 
 type UserResponse struct {
 	Id        int       `json:"id"`
-	Name      string    `json:"name"`
+	FullName  string    `json:"fullname"`
+	Username  string    `json:"username"`
 	Email     string    `json:"email"`
-	IsAdmin   bool      `json:"is_admin"`
+	Role      string    `json:"role"`
+	Gender    string    `json:"gender"`
 	Password  string    `json:"password,omitempty"`
 	Token     string    `json:"token,omitempty"`
 	CreatedAt time.Time `json:"created_at"`
@@ -20,9 +22,11 @@ type UserResponse struct {
 func (u *UserResponse) ToDomain() users.Domain {
 	return users.Domain{
 		ID:        u.Id,
-		Name:      u.Name,
+		FullName:  u.FullName,
+		Username:  u.Username,
 		Email:     u.Email,
-		IsAdmin:   u.IsAdmin,
+		Role:      u.Role,
+		Gender:    u.Gender,
 		CreatedAt: u.CreatedAt,
 		UpdatedAt: u.UpdatedAt,
 	}
@@ -31,9 +35,11 @@ func (u *UserResponse) ToDomain() users.Domain {
 func FromDomain(u users.Domain) UserResponse {
 	return UserResponse{
 		Id:        u.ID,
-		Name:      u.Name,
+		FullName:  u.FullName,
+		Username:  u.Username,
 		Email:     u.Email,
-		IsAdmin:   u.IsAdmin,
+		Role:      u.Role,
+		Gender:    u.Gender,
 		Password:  u.Password,
 		Token:     u.Token,
 		CreatedAt: u.CreatedAt,

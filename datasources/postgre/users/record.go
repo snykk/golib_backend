@@ -3,45 +3,64 @@ package users
 import (
 	"time"
 
+	"github.com/snykk/golib_backend/constants"
 	"github.com/snykk/golib_backend/domains/users"
 	"gorm.io/gorm"
 )
 
+type Role struct {
+	Id   int    `gorm:"PrimaryKey "`
+	Name string `gorm:"type:varchar(15) not null"`
+}
+
+type Gender struct {
+	Id   int    `gorm:"PrimaryKey"`
+	Name string `gorm:"type:varchar(15) not null"`
+}
+
 type User struct {
-	Id        int
-	Name      string
-	Email     string
-	Password  string
-	IsAdmin   bool
-	IsActive  bool
-	CreatedAt time.Time
-	UpdatedAt time.Time
-	DeletedAt gorm.DeletedAt `gorm:"index"`
+	Id          int    `gorm:"PrimaryKey"`
+	FullName    string `gorm:"type:varchar(30) not null"`
+	Username    string `gorm:"uniqueIndex:idx_username; type:varchar(30) not null"`
+	Email       string `gorm:"uniqueIndex:idx_email; type:varchar(50) not null"`
+	Password    string `gorm:"type:varchar(255) not null"`
+	IsActivated bool   `gorm:"not null"`
+	RoleId      int    `gorm:"not null"`
+	Role        Role
+	GenderId    int `gorm:"not null"`
+	Gender      Gender
+	CreatedAt   time.Time
+	UpdatedAt   time.Time
+	DeletedAt   gorm.DeletedAt `gorm:"index"`
 }
 
 func (u *User) ToDomain() users.Domain {
 	return users.Domain{
-		ID:        u.Id,
-		Name:      u.Name,
-		Email:     u.Email,
-		Password:  u.Password,
-		IsAdmin:   u.IsAdmin,
-		IsActive:  u.IsActive,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		ID:          u.Id,
+		FullName:    u.FullName,
+		Username:    u.Username,
+		Email:       u.Email,
+		Password:    u.Password,
+		Role:        u.Role.Name,
+		Gender:      u.Gender.Name,
+		IsActivated: u.IsActivated,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
 	}
 }
 
 func FromDomain(u *users.Domain) User {
 	return User{
-		Id:        u.ID,
-		Name:      u.Name,
-		Email:     u.Email,
-		Password:  u.Password,
-		IsAdmin:   u.IsAdmin,
-		IsActive:  u.IsActive,
-		CreatedAt: u.CreatedAt,
-		UpdatedAt: u.UpdatedAt,
+		Id:          u.ID,
+		FullName:    u.FullName,
+		Username:    u.Username,
+		Email:       u.Email,
+		Password:    u.Password,
+		RoleId:      constants.MapperRoleToId[u.Role],
+		GenderId:    constants.MapperGenderToId[u.Gender],
+		IsActivated: u.IsActivated,
+		CreatedAt:   u.CreatedAt,
+		UpdatedAt:   u.UpdatedAt,
 	}
 }
 

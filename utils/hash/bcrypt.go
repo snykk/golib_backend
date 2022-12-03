@@ -1,4 +1,4 @@
-package encrpyt
+package encrypt
 
 import "golang.org/x/crypto/bcrypt"
 

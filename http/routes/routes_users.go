@@ -43,5 +43,7 @@ func (r *usersRoutes) UsersRoute() {
 		userRoute.GET("/me", r.controller.GetUserData)
 		userRoute.PUT("", r.controller.Update)
 		userRoute.DELETE("", r.controller.Delete)
+		userRoute.POST("/change-password", r.controller.ChangePassword)
+		userRoute.POST("/change-email", r.controller.ChangeEmail)
 	}
 }

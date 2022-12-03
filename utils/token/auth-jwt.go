@@ -10,14 +10,16 @@ import (
 )
 
 type JWTService interface {
-	GenerateToken(userID int, isAdmin bool) (t string, err error)
+	GenerateToken(userID int, isAdmin bool, email string, password string) (t string, err error)
 	ValidateToken(token string) (*jwt.Token, error)
-	ParseToken(tokenString string) (claims jwtCustomClaim, err error)
+	ParseToken(tokenString string) (claims JwtCustomClaim, err error)
 }
 
-type jwtCustomClaim struct {
-	UserID  int
-	IsAdmin bool
+type JwtCustomClaim struct {
+	UserID   int
+	IsAdmin  bool
+	Email    string
+	Password string
 	jwt.StandardClaims
 }
 
@@ -47,10 +49,12 @@ func getConfigClaims() (issuer string, secretKey string) {
 	return
 }
 
-func (j *jwtService) GenerateToken(UserID int, isAdmin bool) (t string, err error) {
-	claims := &jwtCustomClaim{
-		UserID,
+func (j *jwtService) GenerateToken(userID int, isAdmin bool, email string, password string) (t string, err error) {
+	claims := &JwtCustomClaim{
+		userID,
 		isAdmin,
+		email,
+		password,
 		jwt.StandardClaims{
 			ExpiresAt: time.Now().Add(time.Hour * time.Duration(config.AppConfig.JWTExpired)).Unix(),
 			Issuer:    j.issuer,
@@ -71,11 +75,11 @@ func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
 	})
 }
 
-func (j *jwtService) ParseToken(tokenString string) (claims jwtCustomClaim, err error) {
+func (j *jwtService) ParseToken(tokenString string) (claims JwtCustomClaim, err error) {
 	if token, err := jwt.ParseWithClaims(tokenString, &claims, func(token *jwt.Token) (interface{}, error) {
 		return []byte(j.secretKey), nil
 	}); err != nil || !token.Valid {
-		return jwtCustomClaim{}, errors.New("token is not valid")
+		return JwtCustomClaim{}, errors.New("token is not valid")
 	}
 
 	return

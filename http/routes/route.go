@@ -29,10 +29,11 @@ func RootHandler(ctx *gin.Context) {
 				"Verif OTP [POST]": "/auth/verif-otp",
 			},
 			Users: map[string]string{
-				"Get Users [GET] <AuthorizeJWT>":                 "/users",
-				"Get User [GET] <AuthorizeJWT>":                  "/users/:id",
-				"Update User [PUT] <AuthorizeJWT> <IsValidUser>": "/users/:id",
-				"Delete User [PUT] <AuthorizeJWT> <IsValidUser>": "/users/:id",
+				"Get Users [GET] <AuthorizeJWT>":             "/users",
+				"Get User [GET] <AuthorizeJWT>":              "/users/:id",
+				"Get User Data It Self [GET] <AuthorizeJWT>": "/users/:id",
+				"Update User [PUT] <AuthorizeJWT>":           "/users",
+				"Delete User [PUT] <AuthorizeJWT>":           "/users",
 			},
 			Books: map[string]string{
 				"Get Books [GET] <AuthorizeJWT>":              "/books",
@@ -44,7 +45,6 @@ func RootHandler(ctx *gin.Context) {
 		},
 		Middleware: map[string]string{
 			"<AuthorizeJWT>": "only user with valid token can access endpoint",
-			"<IsValidUser>":  "only user itself or admin can access endpoint",
 			"<IsAdmin>":      "only admin can access endpoint",
 		},
 		Maintainer: "Moh. Najib Fikri aka snykk github.com/snykk najibfikri13@gmail.com",

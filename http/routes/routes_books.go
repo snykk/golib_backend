@@ -20,30 +20,22 @@ type booksRoutes struct {
 }
 
 func NewBooksRoute(db *gorm.DB, jwtService token.JWTService, ristrettoCache cache.RistrettoCache, router *gin.Engine, authMiddleware gin.HandlerFunc, authAdminMiddleware gin.HandlerFunc) *booksRoutes {
-	// user route
 	bookRepository := bookRepository.NewPostgreBookRepository(db)
 	bookUseCase := bookUseCase.NewBookUsecase(bookRepository)
 	bookController := bookController.NewBookController(bookUseCase, ristrettoCache)
+
 	return &booksRoutes{controller: bookController, router: router, db: db, authMiddleware: authMiddleware, authAdminMiddleware: authAdminMiddleware}
 }
 
 func (r *booksRoutes) BooksRoute() {
 	// => Book
 
-	// all users
 	bookRoute := r.router.Group("books")
-	bookRoute.Use(r.authMiddleware)
-	{
-		bookRoute.GET("", r.controller.GetAll)
-		bookRoute.GET("/:id", r.controller.GetById)
-	}
-
-	// admin endpoint
-	bookAdminRoute := r.router.Group("books")
-	bookAdminRoute.Use(r.authAdminMiddleware)
-	{
-		bookRoute.POST("", r.controller.Store)
-		bookRoute.PUT("/:id", r.controller.Update)
-		bookRoute.DELETE("/:id", r.controller.Delete)
-	}
+	// all users
+	bookRoute.GET("", r.authMiddleware, r.controller.GetAll)
+	bookRoute.GET("/:id", r.authMiddleware, r.controller.GetById)
+	// admin only
+	bookRoute.POST("", r.authAdminMiddleware, r.controller.Store)
+	bookRoute.PUT("/:id", r.authAdminMiddleware, r.controller.Update)
+	bookRoute.DELETE("/:id", r.authAdminMiddleware, r.controller.Delete)
 }

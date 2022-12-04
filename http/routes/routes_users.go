@@ -19,10 +19,10 @@ type usersRoutes struct {
 }
 
 func NewUsersRoute(db *gorm.DB, jwtService token.JWTService, redisCache cache.RedisCache, ristrettoCache cache.RistrettoCache, router *gin.Engine, authMiddleware gin.HandlerFunc) *usersRoutes {
-	// user route
 	userRepository := userRepository.NewPostgreUserRepository(db)
 	userUsecase := userUsecase.NewUserUsecase(userRepository, jwtService)
 	userController := userController.NewUserController(userUsecase, redisCache, ristrettoCache)
+
 	return &usersRoutes{controller: userController, router: router, db: db, authMiddleware: authMiddleware}
 }
 

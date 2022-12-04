@@ -9,21 +9,21 @@ import (
 )
 
 type Role struct {
-	Id   int    `gorm:"PrimaryKey "`
+	Id   int    `gorm:"primaryKey;autoIncrement "`
 	Name string `gorm:"type:varchar(15) not null"`
 }
 
 type Gender struct {
-	Id   int    `gorm:"PrimaryKey"`
+	Id   int    `gorm:"primaryKey;autoIncrement"`
 	Name string `gorm:"type:varchar(15) not null"`
 }
 
 type User struct {
-	Id          int    `gorm:"PrimaryKey"`
-	FullName    string `gorm:"type:varchar(30) not null"`
-	Username    string `gorm:"uniqueIndex:idx_username; type:varchar(30) not null"`
-	Email       string `gorm:"uniqueIndex:idx_email; type:varchar(50) not null"`
-	Password    string `gorm:"type:varchar(255) not null"`
+	Id          int    `gorm:"primaryKey; autoIncrement"`
+	FullName    string `gorm:"type:varchar(30); not null"`
+	Username    string `gorm:"uniqueIndex:idx_username; type:varchar(30); not null"`
+	Email       string `gorm:"uniqueIndex:idx_email; type:varchar(50); not null"`
+	Password    string `gorm:"type:varchar(255); not null"`
 	IsActivated bool   `gorm:"not null"`
 	RoleId      int    `gorm:"not null"`
 	Role        Role

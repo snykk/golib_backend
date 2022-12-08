@@ -28,8 +28,7 @@ func NewBooksRoute(db *gorm.DB, jwtService token.JWTService, ristrettoCache cach
 }
 
 func (r *booksRoutes) BooksRoute() {
-	// => Book
-
+	// Book
 	bookRoute := r.router.Group("books")
 	// all users
 	bookRoute.GET("", r.authMiddleware, r.controller.GetAll)

@@ -12,6 +12,7 @@ type Domain struct {
 	Author      string
 	Publisher   string
 	ISBN        string
+	Rating      float64
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

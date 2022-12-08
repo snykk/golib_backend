@@ -4,7 +4,7 @@ import (
 	"github.com/snykk/golib_backend/domains/books"
 )
 
-type BookUpdateRequest struct {
+type BookUpdateRequests struct {
 	Title       string `json:"title"`
 	Author      string `json:"author"`
 	Description string `json:"description"`
@@ -12,7 +12,7 @@ type BookUpdateRequest struct {
 	ISBN        string `json:"isbn"`
 }
 
-func (b *BookUpdateRequest) ToDomain() *books.Domain {
+func (b *BookUpdateRequests) ToDomain() *books.Domain {
 	return &books.Domain{
 		Title:       b.Title,
 		Description: b.Description,

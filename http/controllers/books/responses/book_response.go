@@ -13,6 +13,7 @@ type BookResponse struct {
 	Author      string    `json:"author"`
 	Publisher   string    `json:"publisher"`
 	ISBN        string    `json:"isbn"`
+	Rating      float64   `json:"rating"`
 	CreatedAt   time.Time `json:"created_at"`
 	UpdatedAt   time.Time `json:"updated_at"`
 }
@@ -25,6 +26,7 @@ func FromDomain(bookDomain books.Domain) BookResponse {
 		Author:      bookDomain.Author,
 		Publisher:   bookDomain.Publisher,
 		ISBN:        bookDomain.ISBN,
+		Rating:      bookDomain.Rating,
 		CreatedAt:   bookDomain.CreatedAt,
 		UpdatedAt:   bookDomain.UpdatedAt,
 	}

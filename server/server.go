@@ -53,6 +53,7 @@ func NewApp() (*App, error) {
 	router.GET("/", routes.RootHandler)
 	routes.NewUsersRoute(conn, jwtService, redisCache, ristrettoCache, router, authMiddleware).UsersRoute()
 	routes.NewBooksRoute(conn, jwtService, ristrettoCache, router, authMiddleware, authAdminMiddleware).BooksRoute()
+	routes.NewReviewsRoute(conn, jwtService, ristrettoCache, router, authMiddleware).ReviewsRoute()
 
 	// setup http server
 	server := &http.Server{

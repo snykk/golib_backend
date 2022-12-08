@@ -100,7 +100,7 @@ func (c *BookController) GetById(ctx *gin.Context) {
 }
 
 func (c *BookController) Update(ctx *gin.Context) {
-	var bookUpdateRequest requests.BookUpdateRequest
+	var bookUpdateRequest requests.BookRequest
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	if err := ctx.ShouldBindJSON(&bookUpdateRequest); err != nil {

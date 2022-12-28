@@ -31,9 +31,11 @@ func (r *reviewsRoutes) ReviewsRoute() {
 	reviewRoute := r.router.Group("reviews")
 	reviewRoute.Use(r.authMiddleware)
 	{
-		reviewRoute.POST("", r.controller.AddReview)
+		reviewRoute.POST("", r.controller.Store)
 		reviewRoute.GET("", r.controller.GetAll)
 		reviewRoute.GET("/:id", r.controller.GetById)
+		reviewRoute.GET("/book/:id", r.controller.GetByBookId)
+		reviewRoute.GET("/user/:id", r.controller.GetByUserid)
 		reviewRoute.PUT("/:id", r.controller.Update)
 		reviewRoute.DELETE("/:id", r.controller.Delete)
 	}

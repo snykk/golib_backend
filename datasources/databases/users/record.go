@@ -29,6 +29,7 @@ type User struct {
 	Role        Role
 	GenderId    int `gorm:"not null"`
 	Gender      Gender
+	Reviews     int `gorm:"type:integer; not null"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`
@@ -44,6 +45,7 @@ func (u *User) ToDomain() users.Domain {
 		Role:        u.Role.Name,
 		Gender:      u.Gender.Name,
 		IsActivated: u.IsActivated,
+		Reviews:     u.Reviews,
 		CreatedAt:   u.CreatedAt,
 		UpdatedAt:   u.UpdatedAt,
 	}

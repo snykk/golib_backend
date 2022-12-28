@@ -133,6 +133,7 @@ func lazySeeder(db *gorm.DB) (err error) {
 		IsActivated: true,
 		RoleId:      1,
 		GenderId:    1,
+		Reviews:     1,
 		CreatedAt:   time.Now(),
 	}
 	err = db.Model(&userRepository.User{}).Create(&users1).Error
@@ -159,6 +160,7 @@ func lazySeeder(db *gorm.DB) (err error) {
 
 	// Book
 	// book1
+	rating1 := 9.0
 	book1 := bookRepository.Book{
 		Id:          1,
 		Title:       "Atomic Habits",
@@ -166,7 +168,7 @@ func lazySeeder(db *gorm.DB) (err error) {
 		Author:      "James Clear",
 		Publisher:   "Gramedia",
 		ISBN:        "1234567891234",
-		Rating:      9,
+		Rating:      &rating1,
 		CreatedAt:   time.Now(),
 	}
 	err = db.Model(&bookRepository.Book{}).Create(&book1).Error
@@ -175,6 +177,7 @@ func lazySeeder(db *gorm.DB) (err error) {
 	}
 
 	// book2
+	rating2 := 0.0
 	book2 := bookRepository.Book{
 		Id:          2,
 		Title:       "Mindset",
@@ -182,6 +185,7 @@ func lazySeeder(db *gorm.DB) (err error) {
 		Author:      "Carrol Dweck",
 		Publisher:   "Gramedia",
 		ISBN:        "1234567891234",
+		Rating:      &rating2,
 		CreatedAt:   time.Now(),
 	}
 	err = db.Model(&bookRepository.Book{}).Create(&book2).Error

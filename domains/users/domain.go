@@ -15,6 +15,7 @@ type Domain struct {
 	Role        string
 	Gender      string
 	IsActivated bool
+	Reviews     int
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 }

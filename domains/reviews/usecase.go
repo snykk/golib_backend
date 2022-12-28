@@ -44,6 +44,26 @@ func (uc *reviewUsecase) GetById(ctx context.Context, id int) (Domain, error) {
 	return domain, nil
 }
 
+func (uc *reviewUsecase) GetByBookId(ctx context.Context, bookId int) ([]Domain, error) {
+	domain, err := uc.repo.GetByBookId(ctx, bookId)
+
+	if err != nil {
+		return []Domain{}, err
+	}
+
+	return domain, nil
+}
+
+func (uc *reviewUsecase) GetByUserId(ctx context.Context, userId int) ([]Domain, error) {
+	domain, err := uc.repo.GetByUserId(ctx, userId)
+
+	if err != nil {
+		return []Domain{}, err
+	}
+
+	return domain, nil
+}
+
 func (uc *reviewUsecase) Update(ctx context.Context, domain *Domain, userId, reviewId int) (Domain, error) {
 	beforeUpdate, err := uc.repo.GetById(ctx, reviewId)
 	if err != nil {
@@ -67,14 +87,14 @@ func (uc *reviewUsecase) Update(ctx context.Context, domain *Domain, userId, rev
 	return afterUpdate, err
 }
 
-func (uc *reviewUsecase) Delete(ctx context.Context, userId, reviewId int) (err error) {
+func (uc *reviewUsecase) Delete(ctx context.Context, userId, reviewId int) (bookId int, err error) {
 	beforeUpdate, err := uc.repo.GetById(ctx, reviewId)
 	if err != nil {
-		return errors.New("review not found")
+		return 0, errors.New("review not found")
 	}
 	if beforeUpdate.UserId != userId {
-		return errors.New("you don't have access to update this review")
+		return 0, errors.New("you don't have access to delete this review")
 	}
 
-	return uc.repo.Delete(ctx, reviewId)
+	return uc.repo.Delete(ctx, &beforeUpdate)
 }

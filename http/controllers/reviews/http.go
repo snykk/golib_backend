@@ -28,7 +28,7 @@ func NewReviewController(reviewUsecase reviews.Usecase, ristrettoCache cache.Ris
 	}
 }
 
-func (c *ReviewController) AddReview(ctx *gin.Context) {
+func (c *ReviewController) Store(ctx *gin.Context) {
 	userClaims := ctx.MustGet(constants.CtxAuthenticatedUserKey).(token.JwtCustomClaim)
 	var reviewRequest requests.ReviewRequest
 	if err := ctx.ShouldBindJSON(&reviewRequest); err != nil {
@@ -48,6 +48,8 @@ func (c *ReviewController) AddReview(ctx *gin.Context) {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
+
+	go c.ristrettoCache.Del("reviews", "users", fmt.Sprintf("user/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", reviewRequest.BookId))
 
 	controllers.NewSuccessResponse(ctx, "review created successfully", gin.H{
 		"reviews": responses.FromDomain(review),
@@ -108,6 +110,50 @@ func (c *ReviewController) GetById(ctx *gin.Context) {
 	})
 }
 
+func (c *ReviewController) GetByBookId(ctx *gin.Context) {
+	bookId, _ := strconv.Atoi(ctx.Param("id"))
+	ctxx := ctx.Request.Context()
+
+	reviewsDomain, err := c.reviewUsecase.GetByBookId(ctxx, bookId)
+	if err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		return
+	}
+
+	reviews := responses.ToResponseList(reviewsDomain)
+
+	if reviews == nil {
+		controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with book id %d is empty", bookId), []int{})
+		return
+	}
+
+	controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with book id %d fetched successfully", bookId), map[string]interface{}{
+		"review": reviews,
+	})
+}
+
+func (c *ReviewController) GetByUserid(ctx *gin.Context) {
+	userId, _ := strconv.Atoi(ctx.Param("id"))
+	ctxx := ctx.Request.Context()
+
+	reviewsDomain, err := c.reviewUsecase.GetByUserId(ctxx, userId)
+	if err != nil {
+		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		return
+	}
+
+	reviews := responses.ToResponseList(reviewsDomain)
+
+	if reviews == nil {
+		controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with user id %d is empty", userId), []int{})
+		return
+	}
+
+	controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with user id %d fetched successfully", userId), map[string]interface{}{
+		"review": reviews,
+	})
+}
+
 func (c *ReviewController) Update(ctx *gin.Context) {
 	userClaims := ctx.MustGet(constants.CtxAuthenticatedUserKey).(token.JwtCustomClaim)
 	reviewId, _ := strconv.Atoi(ctx.Param("id"))
@@ -130,7 +176,7 @@ func (c *ReviewController) Update(ctx *gin.Context) {
 		return
 	}
 
-	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", review.ID))
+	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", review.ID), "users", fmt.Sprintf("user/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", reviewRequest.BookId))
 
 	controllers.NewSuccessResponse(ctx, "review created successfully", gin.H{
 		"reviews": responses.FromDomain(review),
@@ -142,12 +188,13 @@ func (c *ReviewController) Delete(ctx *gin.Context) {
 	reviewid, _ := strconv.Atoi(ctx.Param("id"))
 
 	ctxx := ctx.Request.Context()
-	if err := c.reviewUsecase.Delete(ctxx, userClaims.UserID, reviewid); err != nil {
+	bookId, err := c.reviewUsecase.Delete(ctxx, userClaims.UserID, reviewid)
+	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", reviewid))
+	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", reviewid), "users", fmt.Sprintf("user/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", bookId))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with id %d deleted successfully", reviewid), nil)
 }

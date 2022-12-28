@@ -133,7 +133,7 @@ func (c *UserController) GetById(ctx *gin.Context) {
 
 func (c *UserController) GetUserData(ctx *gin.Context) {
 	userClaims := ctx.MustGet(constants.CtxAuthenticatedUserKey).(token.JwtCustomClaim)
-	if val := c.ristrettoCache.Get(fmt.Sprintf("user/%s", userClaims.Password)); val != nil {
+	if val := c.ristrettoCache.Get(fmt.Sprintf("user/%s", userClaims.Email)); val != nil {
 		controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
 			"user": val,
 		})
@@ -149,7 +149,7 @@ func (c *UserController) GetUserData(ctx *gin.Context) {
 
 	userResponse := responses.FromDomain(userDom)
 
-	go c.ristrettoCache.Set(fmt.Sprintf("user/%s", userClaims.Password), userResponse)
+	go c.ristrettoCache.Set(fmt.Sprintf("user/%s", userClaims.Email), userResponse)
 
 	controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
 		"user": userResponse,
@@ -270,6 +270,7 @@ func (c *UserController) VerifOTP(ctx *gin.Context) {
 	}
 
 	go c.redisCache.Del(otpKey)
+	go c.ristrettoCache.Del("users")
 
 	controllers.NewSuccessResponse(ctx, "otp verification success", nil)
 }

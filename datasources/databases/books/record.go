@@ -8,13 +8,13 @@ import (
 )
 
 type Book struct {
-	Id          int     `gorm:"primaryKey;autoIncrement"`
-	Title       string  `gorm:"type:varchar(100); not null"`
-	Description string  `gorm:"type:text; not null"`
-	Author      string  `gorm:"type:varchar(30); not null"`
-	Publisher   string  `gorm:"type:varchar(30); not null"`
-	ISBN        string  `gorm:"type:char(13); not null"`
-	Rating      float64 `gorm:"type:NUMERIC(2,1); not null"`
+	Id          int      `gorm:"primaryKey;autoIncrement"`
+	Title       string   `gorm:"type:varchar(100); not null"`
+	Description string   `gorm:"type:text; not null"`
+	Author      string   `gorm:"type:varchar(30); not null"`
+	Publisher   string   `gorm:"type:varchar(30); not null"`
+	ISBN        string   `gorm:"type:char(13); not null"`
+	Rating      *float64 `gorm:"type:NUMERIC(2,1); not null"`
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
 	DeletedAt   gorm.DeletedAt `gorm:"index"`

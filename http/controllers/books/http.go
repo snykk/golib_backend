@@ -40,6 +40,8 @@ func (c *BookController) Store(ctx *gin.Context) {
 		return
 	}
 
+	go c.ristrettoCache.Del("books")
+
 	controllers.NewSuccessResponse(ctx, "book inserted successfully", map[string]interface{}{
 		"book": responses.FromDomain(b),
 	})

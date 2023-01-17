@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 	"gorm.io/gorm"
 
+	"github.com/snykk/golib_backend/datasources/cache"
 	userRepository "github.com/snykk/golib_backend/datasources/databases/users"
 	userUsecase "github.com/snykk/golib_backend/domains/users"
 	userController "github.com/snykk/golib_backend/http/controllers/users"
-	"github.com/snykk/golib_backend/packages/cache"
 )
 
 type usersRoutes struct {

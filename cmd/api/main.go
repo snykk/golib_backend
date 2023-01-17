@@ -3,8 +3,8 @@ package main
 import (
 	"log"
 
+	"github.com/snykk/golib_backend/cmd/api/server"
 	"github.com/snykk/golib_backend/config"
-	"github.com/snykk/golib_backend/server"
 )
 
 func init() {

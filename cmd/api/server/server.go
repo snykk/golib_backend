@@ -12,12 +12,12 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/config"
+	"github.com/snykk/golib_backend/datasources/cache"
 	"github.com/snykk/golib_backend/datasources/databases/drivers"
 	"github.com/snykk/golib_backend/http/logger"
 	"github.com/snykk/golib_backend/http/middlewares"
 	"github.com/snykk/golib_backend/http/routes"
-	"github.com/snykk/golib_backend/packages/cache"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 	"gorm.io/gorm"
 )
 

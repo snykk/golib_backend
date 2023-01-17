@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 	"gorm.io/gorm"
 
+	"github.com/snykk/golib_backend/datasources/cache"
 	reviewRepository "github.com/snykk/golib_backend/datasources/databases/reviews"
 	reviewUseCase "github.com/snykk/golib_backend/domains/reviews"
 	reviewController "github.com/snykk/golib_backend/http/controllers/reviews"
-	"github.com/snykk/golib_backend/packages/cache"
 )
 
 type reviewsRoutes struct {

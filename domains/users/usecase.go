@@ -6,7 +6,7 @@ import (
 
 	"github.com/snykk/golib_backend/constants"
 	"github.com/snykk/golib_backend/helpers"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 )
 
 type userUsecase struct {

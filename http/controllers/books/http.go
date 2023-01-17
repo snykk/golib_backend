@@ -6,11 +6,11 @@ import (
 	"strconv"
 
 	"github.com/gin-gonic/gin"
+	"github.com/snykk/golib_backend/datasources/cache"
 	book "github.com/snykk/golib_backend/domains/books"
 	"github.com/snykk/golib_backend/http/controllers"
 	"github.com/snykk/golib_backend/http/controllers/books/requests"
 	"github.com/snykk/golib_backend/http/controllers/books/responses"
-	"github.com/snykk/golib_backend/packages/cache"
 )
 
 type BookController struct {

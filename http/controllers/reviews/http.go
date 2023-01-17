@@ -7,13 +7,13 @@ import (
 
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/constants"
+	"github.com/snykk/golib_backend/datasources/cache"
 	"github.com/snykk/golib_backend/domains/reviews"
 	"github.com/snykk/golib_backend/helpers"
 	"github.com/snykk/golib_backend/http/controllers"
 	"github.com/snykk/golib_backend/http/controllers/reviews/requests"
 	"github.com/snykk/golib_backend/http/controllers/reviews/responses"
-	"github.com/snykk/golib_backend/packages/cache"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 )
 
 type ReviewController struct {

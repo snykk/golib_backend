@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/constants"
 	"github.com/snykk/golib_backend/http/controllers"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 )
 
 type AuthMiddleware struct {

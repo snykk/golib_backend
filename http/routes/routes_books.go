@@ -2,13 +2,13 @@ package routes
 
 import (
 	"github.com/gin-gonic/gin"
-	"github.com/snykk/golib_backend/packages/token"
+	"github.com/snykk/golib_backend/http/token"
 	"gorm.io/gorm"
 
+	"github.com/snykk/golib_backend/datasources/cache"
 	bookRepository "github.com/snykk/golib_backend/datasources/databases/books"
 	bookUseCase "github.com/snykk/golib_backend/domains/books"
 	bookController "github.com/snykk/golib_backend/http/controllers/books"
-	"github.com/snykk/golib_backend/packages/cache"
 )
 
 type booksRoutes struct {

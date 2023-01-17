@@ -1,7 +1,6 @@
 package reviews
 
 import (
-	"errors"
 	"fmt"
 	"net/http"
 	"strconv"
@@ -9,6 +8,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/constants"
 	"github.com/snykk/golib_backend/domains/reviews"
+	"github.com/snykk/golib_backend/helpers"
 	"github.com/snykk/golib_backend/http/controllers"
 	"github.com/snykk/golib_backend/http/controllers/reviews/requests"
 	"github.com/snykk/golib_backend/http/controllers/reviews/responses"
@@ -36,13 +36,19 @@ func (c *ReviewController) Store(ctx *gin.Context) {
 		return
 	}
 
-	if err := isValidRating(reviewRequest.Rating); err != nil {
+	if err := helpers.IsRatingValid(reviewRequest.Rating); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
 	ctxx := ctx.Request.Context()
 	reviewDom := reviewRequest.ToDomain()
+
+	userReview, _ := c.reviewUsecase.GetUserReview(ctxx, reviewDom.BookId, userClaims.UserID)
+	if userReview.ID != 0 {
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, "user already make a review")
+		return
+	}
 	review, err := c.reviewUsecase.Store(ctxx, reviewDom, userClaims.UserID)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
@@ -80,7 +86,7 @@ func (c *ReviewController) GetAll(ctx *gin.Context) {
 	go c.ristrettoCache.Set("reviews", reviews)
 
 	controllers.NewSuccessResponse(ctx, "review data fetched successfully", map[string]interface{}{
-		"books": reviews,
+		"reviews": reviews,
 	})
 }
 
@@ -163,7 +169,7 @@ func (c *ReviewController) Update(ctx *gin.Context) {
 		return
 	}
 
-	if err := isValidRating(reviewRequest.Rating); err != nil {
+	if err := helpers.IsRatingValid(reviewRequest.Rating); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -197,11 +203,4 @@ func (c *ReviewController) Delete(ctx *gin.Context) {
 	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", reviewid), "users", fmt.Sprintf("user/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", bookId))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with id %d deleted successfully", reviewid), nil)
-}
-
-func isValidRating(rating int) error {
-	if rating < 1 || rating > 10 {
-		return errors.New("the rating must be in the range 1 - 10")
-	}
-	return nil
 }

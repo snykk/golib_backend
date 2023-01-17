@@ -38,7 +38,7 @@ func (c *UserController) Regis(ctx *gin.Context) {
 		return
 	}
 
-	if err := isGenderValid(UserRegisRequest.Gender); err != nil {
+	if err := helpers.IsGenderValid(UserRegisRequest.Gender); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -95,7 +95,7 @@ func (c *UserController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	userResponses := responses.ToResponseList(usersFromUseCase)
+	userResponses := responses.ToResponseUserinfoList(usersFromUseCase)
 
 	go c.ristrettoCache.Set("users", userResponses)
 
@@ -166,7 +166,7 @@ func (c *UserController) Update(ctx *gin.Context) {
 		return
 	}
 
-	if err := isGenderValid(userRequest.Gender); err != nil {
+	if err := helpers.IsGenderValid(userRequest.Gender); err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
@@ -332,29 +332,4 @@ func (c *UserController) ChangeEmail(ctx *gin.Context) {
 	go c.redisCache.Set(otpKey, code)
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("email has been changed and otp code has been send to %s please verify soon", userDomain.Email), nil)
-}
-
-func isGenderValid(gender string) error {
-	if !isArrayContains(constants.ListGender, gender) {
-		var option string
-		for index, g := range constants.ListGender {
-			option += g
-			if index != len(constants.ListGender)-1 {
-				option += ", "
-			}
-		}
-
-		return fmt.Errorf("gender must be one of [%s]", option)
-	}
-
-	return nil
-}
-
-func isArrayContains(arr []string, str string) bool {
-	for _, item := range arr {
-		if item == str {
-			return true
-		}
-	}
-	return false
 }

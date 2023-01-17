@@ -72,11 +72,6 @@ func (uc *userUsecase) GetAll() ([]Domain, error) {
 		return []Domain{}, err
 	}
 
-	// encapsulate password
-	for i := 0; i < len(usersFromRepo); i++ {
-		usersFromRepo[i].Password = ""
-	}
-
 	return usersFromRepo, err
 }
 
@@ -96,12 +91,6 @@ func (uc *userUsecase) GetById(ctx context.Context, id int, idClaims int) (Domai
 func (uc *userUsecase) Update(ctx context.Context, domain *Domain, id int) (Domain, error) {
 	var err error
 	domain.ID = id
-
-	// if domain.Password != "" {
-	// 	if domain.Password, err = helpers.GenerateHash(domain.Password); err != nil {
-	// 		return Domain{}, err
-	// 	}
-	// }
 
 	if err := uc.repo.Update(ctx, domain); err != nil {
 		return Domain{}, err

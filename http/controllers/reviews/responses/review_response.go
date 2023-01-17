@@ -15,7 +15,7 @@ type ReviewResponse struct {
 	BookId    int    `json:"book_id"`
 	Book      bookRes.BookResponse
 	UserId    int `json:"user_id"`
-	User      userRes.UserResponse
+	User      userRes.UserInfoResponse
 	CreatedAt time.Time `json:"created_at"`
 	UpdatedAt time.Time `json:"updated_at"`
 }
@@ -28,7 +28,7 @@ func FromDomain(domain reviews.Domain) ReviewResponse {
 		BookId:    domain.BookId,
 		Book:      bookRes.FromDomain(domain.Book),
 		UserId:    domain.UserId,
-		User:      userRes.FromDomain(domain.User),
+		User:      userRes.FromDomainToUserInfo(domain.User),
 		CreatedAt: domain.CreatedAt,
 		UpdatedAt: domain.UpdatedAt,
 	}

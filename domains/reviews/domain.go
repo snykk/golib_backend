@@ -21,21 +21,23 @@ type Domain struct {
 }
 
 type Usecase interface {
-	Store(ctx context.Context, book *Domain, userId int) (Domain, error)
+	Store(ctx context.Context, domain *Domain, userId int) (Domain, error)
 	GetAll() ([]Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
 	GetByBookId(ctx context.Context, bookId int) ([]Domain, error)
 	GetByUserId(ctx context.Context, userId int) ([]Domain, error)
-	Update(ctx context.Context, book *Domain, userId, reviewId int) (Domain, error)
+	Update(ctx context.Context, domain *Domain, userId, reviewId int) (Domain, error)
 	Delete(ctx context.Context, userId, reviewId int) (bookId int, err error)
+	GetUserReview(ctx context.Context, bookId, userId int) (Domain, error)
 }
 
 type Repository interface {
-	Store(ctx context.Context, book *Domain) (Domain, error)
+	Store(ctx context.Context, domain *Domain) (Domain, error)
 	GetAll() ([]Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
 	GetByBookId(ctx context.Context, bookId int) ([]Domain, error)
 	GetByUserId(ctx context.Context, userId int) ([]Domain, error)
-	Update(ctx context.Context, book *Domain) error
+	Update(ctx context.Context, domain *Domain) error
 	Delete(ctx context.Context, domain *Domain) (bookId int, err error)
+	GetUserReview(ctx context.Context, bookId, userId int) (Domain, error)
 }

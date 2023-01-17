@@ -165,3 +165,12 @@ func (r *postgreReviewRepository) Delete(ctx context.Context, domain *reviews.Do
 
 	return review.BookId, err
 }
+
+func (r *postgreReviewRepository) GetUserReview(ctx context.Context, bookId, userId int) (reviews.Domain, error) {
+	var review Review
+	if err := r.conn.Preload("User.Role").Preload("User.Gender").Preload("Book").Where(Review{UserId: userId, BookId: bookId}).First(&review).Error; err != nil {
+		return reviews.Domain{}, err
+	}
+
+	return review.ToDomain(), nil
+}

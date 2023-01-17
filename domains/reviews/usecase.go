@@ -98,3 +98,8 @@ func (uc *reviewUsecase) Delete(ctx context.Context, userId, reviewId int) (book
 
 	return uc.repo.Delete(ctx, &beforeUpdate)
 }
+
+func (uc *reviewUsecase) GetUserReview(ctx context.Context, bookId, userId int) (Domain, error) {
+	userReview, err := uc.repo.GetUserReview(ctx, bookId, userId)
+	return userReview, err
+}

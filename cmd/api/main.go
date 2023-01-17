@@ -3,7 +3,6 @@ package main
 import (
 	"log"
 
-	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/config"
 	"github.com/snykk/golib_backend/server"
 )
@@ -11,10 +10,6 @@ import (
 func init() {
 	if err := config.InitializeAppConfig(); err != nil {
 		log.Fatalln(err)
-	}
-
-	if !config.AppConfig.Debug {
-		gin.SetMode(gin.ReleaseMode)
 	}
 }
 

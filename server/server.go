@@ -13,6 +13,7 @@ import (
 	"github.com/gin-gonic/gin"
 	"github.com/snykk/golib_backend/config"
 	"github.com/snykk/golib_backend/datasources/databases/drivers"
+	"github.com/snykk/golib_backend/http/logger"
 	"github.com/snykk/golib_backend/http/middlewares"
 	"github.com/snykk/golib_backend/http/routes"
 	"github.com/snykk/golib_backend/packages/cache"
@@ -119,7 +120,22 @@ func setupDatabse() (*gorm.DB, error) {
 }
 
 func setupRouter() *gin.Engine {
-	router := gin.Default()
-	router.Use(middlewares.CORSMiddleware)
+	// set the runtime mode
+	var mode = gin.ReleaseMode
+	if config.AppConfig.Debug {
+		mode = gin.DebugMode
+	}
+	gin.SetMode(mode)
+
+	// create a new router instance
+	router := gin.New()
+
+	// set up middlewares
+	router.Use(middlewares.CORSMiddleware())
+	if mode == gin.DebugMode {
+		router.Use(gin.LoggerWithFormatter(logger.CustomLogFormatter))
+	}
+	router.Use(gin.Recovery())
+
 	return router
 }

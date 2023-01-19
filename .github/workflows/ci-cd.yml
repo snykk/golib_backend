@@ -3,8 +3,6 @@ on:
   push:
     branches:
       - master
-    tags:
-      - "*"
 env:
   GO_VERSION: 1.19.2
 
@@ -33,10 +31,17 @@ jobs:
           path: |
             ./coverage.out
             ./coverage.html
+      - name: Auto Increment Semver Action
+        uses: MCKanpolat/auto-semver-action@1.0.5
+        id: versioning
+        with:
+          releaseType: ${{ secrets.RELEASE_TYPE }}
+          incrementPerCommit: false
+          github_token: ${{ secrets.TOKEN_GITHUB }}
       - name: Release application binary
         uses: ncipollo/release-action@v1
         with:
-          tag: 1.0.0
+          tag: v${{ steps.versioning.outputs.version }}
           token: ${{ secrets.TOKEN_GITHUB }}
   deploy:
     name: Deploy to docker hub
@@ -58,4 +63,4 @@ jobs:
           context: .
           file: ./Dockerfile
           push: true
-          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/golib_backend:1.0.0
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/golib_backend:${{ steps.versioning.outputs.version }}

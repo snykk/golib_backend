@@ -1,0 +1,61 @@
+name: Continuous Integration and Deployment
+on:
+  push:
+    branches:
+      - master
+    tags:
+      - "*"
+env:
+  GO_VERSION: 1.19.2
+
+jobs:
+  test:
+    name: Perform Unit Testing and Code Coverage Analysis
+    runs-on: ubuntu-latest
+    steps:
+      - name: Setup go ${{env.GO_VERSION}}
+        uses: actions/setup-go@v3
+        with:
+          go-version: ${{env.GO_VERSION}}
+      - name: Check out source code
+        uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Run tests and build application
+        run: |
+          go test -v ./...
+          go test -coverprofile=coverage.out ./...
+          go tool cover -html=coverage.out -o coverage.html
+      - name: Save test results as artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: results
+          path: |
+            ./coverage.out
+            ./coverage.html
+      - name: Release application binary
+        uses: ncipollo/release-action@v1
+        with:
+          tag: 1.0.0
+          token: ${{ secrets.TOKEN_GITHUB }}
+  deploy:
+    name: Deploy to docker hub
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out source code
+        uses: actions/checkout@v3
+      - name: Login to Docker Hub
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+      - name: Setup docker build
+        uses: docker/setup-buildx-action@v2
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v3
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ secrets.DOCKER_HUB_USERNAME }}/golib_backend:1.0.0

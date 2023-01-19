@@ -40,7 +40,7 @@ func (r *postgreUserRepository) Store(ctx context.Context, domain *users.Domain)
 	return user.ToDomain(), nil
 }
 
-func (r *postgreUserRepository) GetAll() ([]users.Domain, error) {
+func (r *postgreUserRepository) GetAll(ctx context.Context) ([]users.Domain, error) {
 	var usersFromDB []User
 
 	if err := r.conn.Preload("Role").Preload("Gender").Where("is_activated = true").Find(&usersFromDB).Error; err != nil {

@@ -45,7 +45,7 @@ func (c *UserController) Regis(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 	userDomain := UserRegisRequest.ToDomain()
-	userDomainn, err := c.usecase.Store(ctxx, &userDomain)
+	userDomainn, err := c.usecase.Store(ctxx, userDomain)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -81,14 +81,15 @@ func (c *UserController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	usersFromUseCase, err := c.usecase.GetAll()
+	ctxx := ctx.Request.Context()
+	usersFromUseCase, err := c.usecase.GetAll(ctxx)
 
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
-	if usersFromUseCase == nil {
+	if len(usersFromUseCase) == 0 {
 		controllers.NewSuccessResponse(ctx, "user data is empty", map[string]interface{}{
 			"users": []int{},
 		})

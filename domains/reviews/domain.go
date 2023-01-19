@@ -22,7 +22,7 @@ type Domain struct {
 
 type Usecase interface {
 	Store(ctx context.Context, domain *Domain, userId int) (Domain, error)
-	GetAll() ([]Domain, error)
+	GetAll(ctx context.Context) ([]Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
 	GetByBookId(ctx context.Context, bookId int) ([]Domain, error)
 	GetByUserId(ctx context.Context, userId int) ([]Domain, error)
@@ -33,7 +33,7 @@ type Usecase interface {
 
 type Repository interface {
 	Store(ctx context.Context, domain *Domain) (Domain, error)
-	GetAll() ([]Domain, error)
+	GetAll(ctx context.Context) ([]Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
 	GetByBookId(ctx context.Context, bookId int) ([]Domain, error)
 	GetByUserId(ctx context.Context, userId int) ([]Domain, error)

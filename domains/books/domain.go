@@ -18,7 +18,7 @@ type Domain struct {
 }
 
 type Usecase interface {
-	GetAll() ([]Domain, error)
+	GetAll(ctx context.Context) ([]Domain, error)
 	Store(ctx context.Context, book *Domain) (Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
 	Update(ctx context.Context, book *Domain, id int) (Domain, error)
@@ -26,7 +26,7 @@ type Usecase interface {
 }
 
 type Repository interface {
-	GetAll() ([]Domain, error)
+	GetAll(ctx context.Context) ([]Domain, error)
 	Store(ctx context.Context, book *Domain) (Domain, error)
 	GetById(ctx context.Context, id int) (Domain, error)
 	Update(ctx context.Context, book *Domain) (err error)

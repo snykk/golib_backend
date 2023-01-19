@@ -26,7 +26,7 @@ func (r *postgreBookRepository) Store(ctx context.Context, b *books.Domain) (boo
 	return result.ToDomain(), nil
 }
 
-func (r *postgreBookRepository) GetAll() ([]books.Domain, error) {
+func (r *postgreBookRepository) GetAll(ctx context.Context) ([]books.Domain, error) {
 	var booksFromDB []Book
 	err := r.conn.Find(&booksFromDB).Error
 

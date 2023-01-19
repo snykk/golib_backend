@@ -2,7 +2,6 @@ package token
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/dgrijalva/jwt-go"
@@ -10,8 +9,7 @@ import (
 )
 
 type JWTService interface {
-	GenerateToken(userID int, isAdmin bool, email string, password string) (t string, err error)
-	ValidateToken(token string) (*jwt.Token, error)
+	GenerateToken(bookID int, isAdmin bool, email string, password string) (t string, err error)
 	ParseToken(tokenString string) (claims JwtCustomClaim, err error)
 }
 
@@ -64,15 +62,6 @@ func (j *jwtService) GenerateToken(userID int, isAdmin bool, email string, passw
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	t, err = token.SignedString([]byte(j.secretKey))
 	return
-}
-
-func (j *jwtService) ValidateToken(token string) (*jwt.Token, error) {
-	return jwt.Parse(token, func(t_ *jwt.Token) (interface{}, error) {
-		if _, ok := t_.Method.(*jwt.SigningMethodHMAC); !ok {
-			return nil, fmt.Errorf("unexpected signing method %v", t_.Header["alg"])
-		}
-		return []byte(j.secretKey), nil
-	})
 }
 
 func (j *jwtService) ParseToken(tokenString string) (claims JwtCustomClaim, err error) {

@@ -55,7 +55,8 @@ func (c *BookController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	listOfBooks, err := c.bookUsecase.GetAll()
+	ctxx := ctx.Request.Context()
+	listOfBooks, err := c.bookUsecase.GetAll(ctxx)
 	if err != nil {
 		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
@@ -88,7 +89,7 @@ func (c *BookController) GetById(ctx *gin.Context) {
 
 	bookDomain, err := c.bookUsecase.GetById(ctxx, id)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -106,7 +107,7 @@ func (c *BookController) Update(ctx *gin.Context) {
 	id, _ := strconv.Atoi(ctx.Param("id"))
 
 	if err := ctx.ShouldBindJSON(&bookUpdateRequest); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, "internal server error")
+		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
 		return
 	}
 
@@ -114,7 +115,7 @@ func (c *BookController) Update(ctx *gin.Context) {
 	bookDomain := bookUpdateRequest.ToDomain()
 	newBook, err := c.bookUsecase.Update(ctxx, bookDomain, id)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -130,7 +131,7 @@ func (c *BookController) Delete(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 	if err := c.bookUsecase.Delete(ctxx, id); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 

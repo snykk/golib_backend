@@ -33,7 +33,7 @@ func isArrayContains(arr []string, str string) bool {
 }
 
 func IsRatingValid(rating int) error {
-	if rating < 1 || rating > 10 {
+	if rating < 0 || rating > 10 {
 		return errors.New("the rating must be in the range 1 - 10")
 	}
 	return nil

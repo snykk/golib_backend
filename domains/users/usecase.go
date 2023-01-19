@@ -65,8 +65,8 @@ func (uc *userUsecase) Login(ctx context.Context, domain *Domain) (Domain, error
 	return userDomain, nil
 }
 
-func (uc *userUsecase) GetAll() ([]Domain, error) {
-	usersFromRepo, err := uc.repo.GetAll()
+func (uc *userUsecase) GetAll(ctx context.Context) ([]Domain, error) {
+	usersFromRepo, err := uc.repo.GetAll(ctx)
 
 	if err != nil {
 		return []Domain{}, err
@@ -102,11 +102,7 @@ func (uc *userUsecase) Update(ctx context.Context, domain *Domain, id int) (Doma
 }
 
 func (uc *userUsecase) Delete(ctx context.Context, id int) error {
-	_, err := uc.repo.GetById(ctx, id)
-	if err != nil { // check wheter data is exists or not
-		return err
-	}
-	err = uc.repo.Delete(ctx, id)
+	err := uc.repo.Delete(ctx, id)
 	if err != nil {
 		return err
 	}

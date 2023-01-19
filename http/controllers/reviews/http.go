@@ -70,9 +70,11 @@ func (c *ReviewController) GetAll(ctx *gin.Context) {
 		return
 	}
 
-	listOfReviews, err := c.reviewUsecase.GetAll()
+	ctxx := ctx.Request.Context()
+
+	listOfReviews, err := c.reviewUsecase.GetAll(ctxx)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -103,7 +105,7 @@ func (c *ReviewController) GetById(ctx *gin.Context) {
 
 	bookDomain, err := c.reviewUsecase.GetById(ctxx, id)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusNotFound, err.Error())
+		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
 		return
 	}
 
@@ -184,7 +186,7 @@ func (c *ReviewController) Update(ctx *gin.Context) {
 
 	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", review.ID), "users", fmt.Sprintf("user/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", reviewRequest.BookId))
 
-	controllers.NewSuccessResponse(ctx, "review created successfully", gin.H{
+	controllers.NewSuccessResponse(ctx, "review updated successfully", gin.H{
 		"reviews": responses.FromDomain(review),
 	})
 }
@@ -200,7 +202,7 @@ func (c *ReviewController) Delete(ctx *gin.Context) {
 		return
 	}
 
-	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", reviewid), "users", fmt.Sprintf("user/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", bookId))
+	go c.ristrettoCache.Del("reviews", fmt.Sprintf("review/%d", reviewid), "books", fmt.Sprintf("book/%d", userClaims.UserID), "books", fmt.Sprintf("book/%d", bookId))
 
 	controllers.NewSuccessResponse(ctx, fmt.Sprintf("review data with id %d deleted successfully", reviewid), nil)
 }

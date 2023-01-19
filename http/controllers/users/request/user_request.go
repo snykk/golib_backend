@@ -13,8 +13,8 @@ type UserRequest struct {
 	Gender   string `json:"gender" binding:"required"`
 }
 
-func (user UserRequest) ToDomain() users.Domain {
-	return users.Domain{
+func (user UserRequest) ToDomain() *users.Domain {
+	return &users.Domain{
 		FullName: user.FullName,
 		Username: user.Username,
 		Email:    user.Email,

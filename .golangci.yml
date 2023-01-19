@@ -1,0 +1,4 @@
+# linting
+run:
+  skip-files:
+    - ".*\\_mock.go"

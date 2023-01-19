@@ -24,8 +24,8 @@ func (uc *reviewUsecase) Store(ctx context.Context, domain *Domain, userId int) 
 	return review, nil
 }
 
-func (uc *reviewUsecase) GetAll() ([]Domain, error) {
-	domains, err := uc.repo.GetAll()
+func (uc *reviewUsecase) GetAll(ctx context.Context) ([]Domain, error) {
+	domains, err := uc.repo.GetAll(ctx)
 
 	if err != nil {
 		return []Domain{}, err

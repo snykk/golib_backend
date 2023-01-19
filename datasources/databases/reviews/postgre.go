@@ -64,7 +64,7 @@ func (r *postgreReviewRepository) Store(ctx context.Context, domain *reviews.Dom
 	return review.ToDomain(), nil
 }
 
-func (r *postgreReviewRepository) GetAll() ([]reviews.Domain, error) {
+func (r *postgreReviewRepository) GetAll(ctx context.Context) ([]reviews.Domain, error) {
 	var reviewRecords []Review
 	if err := r.conn.Preload("User.Role").Preload("User.Gender").Preload("Book").Find(&reviewRecords).Error; err != nil {
 		return []reviews.Domain{}, err

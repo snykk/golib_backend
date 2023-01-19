@@ -14,8 +14,8 @@ func NewBookUsecase(repo Repository) Usecase {
 	}
 }
 
-func (uc *bookUsecase) GetAll() ([]Domain, error) {
-	books, err := uc.repo.GetAll()
+func (uc *bookUsecase) GetAll(ctx context.Context) ([]Domain, error) {
+	books, err := uc.repo.GetAll(ctx)
 
 	if err != nil {
 		return []Domain{}, err

@@ -134,7 +134,7 @@ func TestRegis(t *testing.T) {
 
 		// Assertions
 		// Assert status code
-		assert.Equal(t, http.StatusOK, w.Result().StatusCode)
+		assert.Equal(t, http.StatusCreated, w.Result().StatusCode)
 		assert.Contains(t, w.Result().Header.Get("Content-Type"), "application/json")
 		assert.Contains(t, body, "registration user success")
 	})
@@ -248,9 +248,9 @@ func TestLogin(t *testing.T) {
 
 		// Assertions
 		// Assert status code
-		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+		assert.Equal(t, http.StatusUnauthorized, w.Result().StatusCode)
 		assert.Contains(t, w.Result().Header.Get("Content-Type"), "application/json")
-		assert.Contains(t, body, "user not found")
+		assert.Contains(t, body, "invalid email or password")
 	})
 }
 
@@ -344,7 +344,7 @@ func TestGetById(t *testing.T) {
 
 		// Assertions
 		// Assert status code
-		assert.Equal(t, http.StatusInternalServerError, w.Result().StatusCode)
+		assert.Equal(t, http.StatusNotFound, w.Result().StatusCode)
 		assert.Contains(t, w.Result().Header.Get("Content-Type"), "application/json")
 	})
 }

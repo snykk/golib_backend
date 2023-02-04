@@ -2,7 +2,6 @@ package users
 
 import (
 	"fmt"
-	"log"
 	"net/http"
 	"strconv"
 
@@ -45,13 +44,13 @@ func (c *UserController) Regis(ctx *gin.Context) {
 
 	ctxx := ctx.Request.Context()
 	userDomain := UserRegisRequest.ToDomain()
-	userDomainn, err := c.usecase.Store(ctxx, userDomain)
+	userDomainn, statusCode, err := c.usecase.Store(ctxx, userDomain)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
-	controllers.NewSuccessResponse(ctx, "registration user success", map[string]interface{}{
+	controllers.NewSuccessResponse(ctx, statusCode, "registration user success", map[string]interface{}{
 		"user": responses.FromDomain(userDomainn),
 	})
 }
@@ -64,33 +63,33 @@ func (c *UserController) Login(ctx *gin.Context) {
 	}
 
 	ctxx := ctx.Request.Context()
-	userDomain, err := c.usecase.Login(ctxx, UserLoginRequest.ToDomain())
+	userDomain, statusCode, err := c.usecase.Login(ctxx, UserLoginRequest.ToDomain())
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
-	controllers.NewSuccessResponse(ctx, "login success", responses.FromDomain(userDomain))
+	controllers.NewSuccessResponse(ctx, statusCode, "login success", responses.FromDomain(userDomain))
 }
 
 func (c *UserController) GetAll(ctx *gin.Context) {
 	if val := c.ristrettoCache.Get("users"); val != nil {
-		controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
+		controllers.NewSuccessResponse(ctx, http.StatusOK, "user data fetched successfully", map[string]interface{}{
 			"users": val,
 		})
 		return
 	}
 
 	ctxx := ctx.Request.Context()
-	usersFromUseCase, err := c.usecase.GetAll(ctxx)
+	usersFromUseCase, statusCode, err := c.usecase.GetAll(ctxx)
 
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	if len(usersFromUseCase) == 0 {
-		controllers.NewSuccessResponse(ctx, "user data is empty", map[string]interface{}{
+		controllers.NewSuccessResponse(ctx, http.StatusOK, "user data is empty", map[string]interface{}{
 			"users": []int{},
 		})
 		return
@@ -100,7 +99,7 @@ func (c *UserController) GetAll(ctx *gin.Context) {
 
 	go c.ristrettoCache.Set("users", userResponses)
 
-	controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
+	controllers.NewSuccessResponse(ctx, statusCode, "user data fetched successfully", map[string]interface{}{
 		"users": userResponses,
 	})
 }
@@ -109,17 +108,17 @@ func (c *UserController) GetById(ctx *gin.Context) {
 	userClaims := ctx.MustGet(constants.CtxAuthenticatedUserKey).(token.JwtCustomClaim)
 	id, _ := strconv.Atoi(ctx.Param("id"))
 	if val := c.ristrettoCache.Get(fmt.Sprintf("user/%d", id)); val != nil {
-		controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
+		controllers.NewSuccessResponse(ctx, http.StatusOK, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
 			"user": val,
 		})
 		return
 	}
 
 	ctxx := ctx.Request.Context()
-	userFromUsecase, err := c.usecase.GetById(ctxx, id, userClaims.UserID)
+	userFromUsecase, statusCode, err := c.usecase.GetById(ctxx, id, userClaims.UserID)
 
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
@@ -127,7 +126,7 @@ func (c *UserController) GetById(ctx *gin.Context) {
 
 	go c.ristrettoCache.Set(fmt.Sprintf("user/%d", id), userResponse)
 
-	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
+	controllers.NewSuccessResponse(ctx, statusCode, fmt.Sprintf("user data with id %d fetched successfully", id), map[string]interface{}{
 		"user": userResponse,
 	})
 }
@@ -135,16 +134,16 @@ func (c *UserController) GetById(ctx *gin.Context) {
 func (c *UserController) GetUserData(ctx *gin.Context) {
 	userClaims := ctx.MustGet(constants.CtxAuthenticatedUserKey).(token.JwtCustomClaim)
 	if val := c.ristrettoCache.Get(fmt.Sprintf("user/%s", userClaims.Email)); val != nil {
-		controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
+		controllers.NewSuccessResponse(ctx, http.StatusOK, "user data fetched successfully", map[string]interface{}{
 			"user": val,
 		})
 		return
 	}
 
 	ctxx := ctx.Request.Context()
-	userDom, err := c.usecase.GetByEmail(ctxx, userClaims.Email)
+	userDom, statusCode, err := c.usecase.GetByEmail(ctxx, userClaims.Email)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
@@ -152,7 +151,7 @@ func (c *UserController) GetUserData(ctx *gin.Context) {
 
 	go c.ristrettoCache.Set(fmt.Sprintf("user/%s", userClaims.Email), userResponse)
 
-	controllers.NewSuccessResponse(ctx, "user data fetched successfully", map[string]interface{}{
+	controllers.NewSuccessResponse(ctx, statusCode, "user data fetched successfully", map[string]interface{}{
 		"user": userResponse,
 	})
 
@@ -174,31 +173,31 @@ func (c *UserController) Update(ctx *gin.Context) {
 
 	userDomain := userRequest.ToDomain()
 	ctxx := ctx.Request.Context()
-	userDomainn, err := c.usecase.Update(ctxx, userDomain, userClaims.UserID)
+	userDomainn, statusCode, err := c.usecase.Update(ctxx, userDomain, userClaims.UserID)
 
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	go c.ristrettoCache.Del("users", fmt.Sprintf("user/%d", userClaims.UserID))
 
-	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d updated successfully", userClaims.UserID), responses.FromDomain(userDomainn))
+	controllers.NewSuccessResponse(ctx, statusCode, fmt.Sprintf("user data with id %d updated successfully", userClaims.UserID), responses.FromDomain(userDomainn))
 }
 
 func (c *UserController) Delete(ctx *gin.Context) {
 	userClaims := ctx.MustGet(constants.CtxAuthenticatedUserKey).(token.JwtCustomClaim)
 	ctxx := ctx.Request.Context()
 
-	err := c.usecase.Delete(ctxx, userClaims.UserID)
+	statusCode, err := c.usecase.Delete(ctxx, userClaims.UserID)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	go c.ristrettoCache.Del("users", fmt.Sprintf("user/%d", userClaims.UserID))
 
-	controllers.NewSuccessResponse(ctx, fmt.Sprintf("user data with id %d deleted successfully", userClaims.UserID), nil)
+	controllers.NewSuccessResponse(ctx, statusCode, fmt.Sprintf("user data with id %d deleted successfully", userClaims.UserID), nil)
 }
 
 func (c *UserController) SendOTP(ctx *gin.Context) {
@@ -210,31 +209,16 @@ func (c *UserController) SendOTP(ctx *gin.Context) {
 	}
 
 	ctxx := ctx.Request.Context()
-	userDom, err := c.usecase.GetByEmail(ctxx, userOTP.Email)
+	otpCode, statusCode, err := c.usecase.SendOTP(ctxx, userOTP.Email)
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if userDom.IsActivated {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, "account alreaday activated")
-		return
-	}
-
-	code, err := helpers.GenerateCode(6)
-	if err != nil {
-		log.Println(err)
-	}
-
-	if err = helpers.SendOTP(code, userOTP.Email); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	otpKey := fmt.Sprintf("user_otp:%s", userOTP.Email)
-	go c.redisCache.Set(otpKey, code)
+	go c.redisCache.Set(otpKey, otpCode)
 
-	controllers.NewSuccessResponse(ctx, fmt.Sprintf("otp code has been send to %s", userOTP.Email), nil)
+	controllers.NewSuccessResponse(ctx, statusCode, fmt.Sprintf("otp code has been send to %s", userOTP.Email), nil)
 }
 
 func (c *UserController) VerifOTP(ctx *gin.Context) {
@@ -246,34 +230,25 @@ func (c *UserController) VerifOTP(ctx *gin.Context) {
 	}
 
 	ctxx := ctx.Request.Context()
-	userDom, err := c.usecase.GetByEmail(ctxx, userOTP.Email)
-	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, err.Error())
-		return
-	}
-
-	if userDom.IsActivated {
-		controllers.NewErrorResponse(ctx, http.StatusBadRequest, "account is already activated")
-		return
-	}
-
 	otpKey := fmt.Sprintf("user_otp:%s", userOTP.Email)
-	otpCode := c.redisCache.Get(otpKey)
+	otpRedis := c.redisCache.Get(otpKey)
 
-	if otpCode != userOTP.Code {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, "invalid otp code")
+	statusCode, err := c.usecase.VerifOTP(ctxx, userOTP.Email, userOTP.Code, otpRedis)
+	if err != nil {
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
-	if err := c.usecase.ActivateUser(ctxx, userOTP.Email); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+	statusCode, err = c.usecase.ActivateUser(ctxx, userOTP.Email)
+	if err != nil {
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	go c.redisCache.Del(otpKey)
 	go c.ristrettoCache.Del("users")
 
-	controllers.NewSuccessResponse(ctx, "otp verification success", nil)
+	controllers.NewSuccessResponse(ctx, statusCode, "otp verification success", nil)
 }
 
 func (c *UserController) ChangePassword(ctx *gin.Context) {
@@ -287,16 +262,16 @@ func (c *UserController) ChangePassword(ctx *gin.Context) {
 
 	userDomain := userRequest.ToDomain()
 	ctxx := ctx.Request.Context()
-	err := c.usecase.ChangePassword(ctxx, userDomain, userRequest.NewPassword, userClaims.UserID)
+	statusCode, err := c.usecase.ChangePassword(ctxx, userDomain, userRequest.NewPassword, userClaims.UserID)
 
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	go c.ristrettoCache.Del("users", fmt.Sprintf("user/%d", userClaims.UserID))
 
-	controllers.NewSuccessResponse(ctx, "password has been changed", nil)
+	controllers.NewSuccessResponse(ctx, statusCode, "password has been changed", nil)
 }
 
 func (c *UserController) ChangeEmail(ctx *gin.Context) {
@@ -310,27 +285,23 @@ func (c *UserController) ChangeEmail(ctx *gin.Context) {
 
 	userDomain := userRequest.ToDomain()
 	ctxx := ctx.Request.Context()
-	err := c.usecase.ChangeEmail(ctxx, userDomain, userClaims.UserID)
+	statusCode, err := c.usecase.ChangeEmail(ctxx, userDomain, userClaims.UserID)
 
 	if err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	go c.ristrettoCache.Del("users", fmt.Sprintf("user/%d", userClaims.UserID))
 
-	code, err := helpers.GenerateCode(6)
+	otpCode, statusCode, err := c.usecase.SendOTP(ctxx, userRequest.NewEmail)
 	if err != nil {
-		log.Println(err)
-	}
-
-	if err = helpers.SendOTP(code, userDomain.Email); err != nil {
-		controllers.NewErrorResponse(ctx, http.StatusInternalServerError, err.Error())
+		controllers.NewErrorResponse(ctx, statusCode, err.Error())
 		return
 	}
 
 	otpKey := fmt.Sprintf("user_otp:%s", userDomain.Email)
-	go c.redisCache.Set(otpKey, code)
+	go c.redisCache.Set(otpKey, otpCode)
 
-	controllers.NewSuccessResponse(ctx, fmt.Sprintf("email has been changed and otp code has been send to %s please verify soon", userDomain.Email), nil)
+	controllers.NewSuccessResponse(ctx, statusCode, fmt.Sprintf("email has been changed and otp code has been send to %s please verify soon", userDomain.Email), nil)
 }

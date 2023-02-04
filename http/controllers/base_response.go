@@ -12,16 +12,16 @@ type BaseResponse struct {
 	Data    interface{} `json:"data,omitempty"`
 }
 
-func NewSuccessResponse(c *gin.Context, message string, data interface{}) {
-	c.JSON(http.StatusOK, BaseResponse{
+func NewSuccessResponse(c *gin.Context, statusCode int, message string, data interface{}) {
+	c.JSON(statusCode, BaseResponse{
 		Status:  true,
 		Message: message,
 		Data:    data,
 	})
 }
 
-func NewErrorResponse(c *gin.Context, code int, err string) {
-	c.JSON(code, BaseResponse{
+func NewErrorResponse(c *gin.Context, statusCode int, err string) {
+	c.JSON(statusCode, BaseResponse{
 		Status:  false,
 		Message: err,
 	})

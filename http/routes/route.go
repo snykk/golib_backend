@@ -14,40 +14,52 @@ type Base struct {
 }
 
 type Routes struct {
-	Auth  map[string]string `json:"auth"`
-	Users map[string]string `json:"users"`
-	Books map[string]string `json:"books"`
+	Auth    map[string]string `json:"auth"`
+	Users   map[string]string `json:"users"`
+	Books   map[string]string `json:"books"`
+	Reviews map[string]string `json:"reviews"`
 }
 
 func RootHandler(ctx *gin.Context) {
 	ctx.JSON(http.StatusOK, Base{
 		Routes: Routes{
 			Auth: map[string]string{
-				"Login [POST]":     "/auth/login",
-				"Regis [POST]":     "/auth/regis",
-				"Send OTP [POST]":  "/auth/send-otp",
-				"Verif OTP [POST]": "/auth/verif-otp",
+				"login [POST]":     "/auth/login",
+				"regis [POST]":     "/auth/regis",
+				"send OTP [POST]":  "/auth/send-otp",
+				"verif OTP [POST]": "/auth/verif-otp",
 			},
 			Users: map[string]string{
-				"Get Users [GET] <AuthorizeJWT>":             "/users",
-				"Get User [GET] <AuthorizeJWT>":              "/users/:id",
-				"Get User Data It Self [GET] <AuthorizeJWT>": "/users/:id",
-				"Update User [PUT] <AuthorizeJWT>":           "/users",
-				"Delete User [PUT] <AuthorizeJWT>":           "/users",
+				"get all users [GET] <CommonTokenJWT>":    "/users",
+				"get user by id [GET] <CommonTokenJWT>":   "/users/:id",
+				"get user data [GET] <CommonTokenJWT>":    "/users/me",
+				"update user data [PUT] <CommonTokenJWT>": "/users",
+				"delete user [DELETE] <CommonTokenJWT>":   "/users",
+				"change email [POST] <CommonTokenJWT>":    "/users/change-email",
+				"change password [POST] <CommonTokenJWT>": "/users/change-password",
 			},
 			Books: map[string]string{
-				"Get Books [GET] <AuthorizeJWT>":              "/books",
-				"Get Book [GET] <AuthorizeJWT>":               "/books/:id",
-				"Create Book [POST] <AuthorizeJWT> <IsAdmin>": "/books",
-				"Update Book [PUT] <AuthorizeJWT> <IsAdmin>":  "/books/:id",
-				"Delete Book [PUT] <AuthorizeJWT> <IsAdmin>":  "/books/:id",
+				"get all books [GET] <CommonTokenJWT>":  "/books",
+				"get book by id [GET] <CommonTokenJWT>": "/books/:id",
+				"create book [POST] <AdminTokenJWT>":    "/books",
+				"update book [PUT] <AdminTokenJWT>":     "/books/:id",
+				"delete book [DELETE] <AdminTokenJWT>":  "/books/:id",
+			},
+			Reviews: map[string]string{
+				"get all reviews [GET] <CommonTokenJWT>":       "/reviews",
+				"get review by id [GET] <CommonTokenJWT>":      "/reviews/:id",
+				"get review by book id [GET] <CommonTokenJWT>": "/reviews/book/:id",
+				"get review by user id [GET] <CommonTokenJWT>": "/reviews/user/:id",
+				"create review [POST] <CommonTokenJWT>":        "/reviews",
+				"update review [PUT] <CommonTokenJWT>":         "/reviews/:id",
+				"delete review [DELETE] <CommonTokenJWT>":      "/reviews/:id",
 			},
 		},
 		Middleware: map[string]string{
-			"<AuthorizeJWT>": "only user with valid token can access endpoint",
-			"<IsAdmin>":      "only admin can access endpoint",
+			"<CommonTokenJWT>": "user with valid basic token can access endpoint",
+			"<AdminTokenJWT>":  "only user with valid admin token can access endpoint",
 		},
-		Maintainer: "Moh. Najib Fikri aka snykk github.com/snykk najibfikri13@gmail.com",
+		Maintainer: "Moh. Najib Fikri aka snykk | github.com/snykk | najibfikri13@gmail.com",
 		Repository: "https://github.com/snykk/golib-backend",
 	})
 }

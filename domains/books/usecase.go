@@ -68,5 +68,5 @@ func (uc *bookUsecase) Delete(ctx context.Context, id int) (int, error) {
 		return http.StatusInternalServerError, err
 	}
 
-	return http.StatusNoContent, nil
+	return http.StatusOK, nil
 }

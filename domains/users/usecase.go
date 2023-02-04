@@ -111,7 +111,7 @@ func (uc *userUsecase) Delete(ctx context.Context, id int) (int, error) {
 	if err != nil {
 		return http.StatusInternalServerError, err
 	}
-	return http.StatusNoContent, nil
+	return http.StatusOK, nil
 }
 
 func (uc *userUsecase) GetByEmail(ctx context.Context, email string) (Domain, int, error) {
@@ -174,6 +174,45 @@ func (uc *userUsecase) ChangeEmail(ctx context.Context, domain *Domain, id int) 
 
 	if err = uc.repo.UpdateEmail(ctx, domain); err != nil {
 		return http.StatusInternalServerError, err
+	}
+
+	return http.StatusOK, nil
+}
+
+func (uc *userUsecase) SendOTP(ctx context.Context, email string) (otpCode string, statusCode int, err error) {
+	domain, err := uc.repo.GetByEmail(ctx, &Domain{Email: email})
+	if err != nil {
+		return "", http.StatusNotFound, errors.New("email not found")
+	}
+
+	if domain.IsActivated {
+		return "", http.StatusBadRequest, errors.New("account already activated")
+	}
+
+	code, err := helpers.GenerateCode(6)
+	if err != nil {
+		return "", http.StatusInternalServerError, err
+	}
+
+	if err = helpers.SendOTP(code, email); err != nil {
+		return "", http.StatusInternalServerError, err
+	}
+
+	return code, http.StatusOK, nil
+}
+
+func (uc *userUsecase) VerifOTP(ctx context.Context, email string, userOTP string, otpRedis string) (statusCode int, err error) {
+	domain, err := uc.repo.GetByEmail(ctx, &Domain{Email: email})
+	if err != nil {
+		return http.StatusNotFound, errors.New("email not found")
+	}
+
+	if domain.IsActivated {
+		return http.StatusBadRequest, errors.New("account already activated")
+	}
+
+	if otpRedis != userOTP {
+		return http.StatusBadRequest, errors.New("invalid otp code")
 	}
 
 	return http.StatusOK, nil

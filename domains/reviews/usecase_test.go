@@ -150,7 +150,7 @@ func TestDelete(t *testing.T) {
 		bookId, statusCode, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
 
 		assert.Nil(t, err)
-		assert.Equal(t, http.StatusNoContent, statusCode)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Equal(t, bookId, reviewDataFromDB.UserId)
 	})
 	t.Run("When Failure Delete review Data", func(t *testing.T) {

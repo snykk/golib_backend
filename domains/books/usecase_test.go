@@ -168,7 +168,7 @@ func TestDelete(t *testing.T) {
 		statusCode, err := bookUsecase.Delete(context.Background(), bookDataFromDB.ID)
 
 		assert.Nil(t, err)
-		assert.Equal(t, http.StatusNoContent, statusCode)
+		assert.Equal(t, http.StatusOK, statusCode)
 	})
 	t.Run("When Failure Delete Book Data", func(t *testing.T) {
 

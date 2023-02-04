@@ -103,7 +103,7 @@ func (uc *reviewUsecase) Delete(ctx context.Context, userId, reviewId int) (book
 		return 0, http.StatusInternalServerError, err
 	}
 
-	return bookId, http.StatusNoContent, err
+	return bookId, http.StatusOK, err
 }
 
 func (uc *reviewUsecase) GetUserReview(ctx context.Context, bookId, userId int) (Domain, int, error) {

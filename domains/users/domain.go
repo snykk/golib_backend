@@ -31,6 +31,8 @@ type Usecase interface {
 	GetByEmail(ctx context.Context, email string) (domain Domain, statusCode int, err error)
 	ChangePassword(ctx context.Context, domain *Domain, new_pass string, id int) (statusCode int, err error)
 	ChangeEmail(ctx context.Context, domain *Domain, id int) (statusCode int, err error)
+	SendOTP(ctx context.Context, email string) (otpCode string, statusCode int, err error)
+	VerifOTP(ctx context.Context, email string, userOTP string, otpRedis string) (statusCode int, err error)
 }
 
 type Repository interface {

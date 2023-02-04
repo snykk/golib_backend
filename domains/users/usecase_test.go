@@ -188,7 +188,7 @@ func TestDelete(t *testing.T) {
 		statusCode, err := userUsecase.Delete(context.Background(), userDataFromDB.ID)
 
 		assert.Nil(t, err)
-		assert.Equal(t, http.StatusNoContent, statusCode)
+		assert.Equal(t, http.StatusOK, statusCode)
 	})
 	t.Run("When Failure Delete User Data", func(t *testing.T) {
 		userRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("int")).Return(errors.New("failed")).Once()

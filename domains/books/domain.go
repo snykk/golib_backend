@@ -18,11 +18,11 @@ type Domain struct {
 }
 
 type Usecase interface {
-	GetAll(ctx context.Context) ([]Domain, error)
-	Store(ctx context.Context, book *Domain) (Domain, error)
-	GetById(ctx context.Context, id int) (Domain, error)
-	Update(ctx context.Context, book *Domain, id int) (Domain, error)
-	Delete(ctx context.Context, id int) error
+	GetAll(ctx context.Context) (domains []Domain, statusCode int, err error)
+	Store(ctx context.Context, book *Domain) (domain Domain, statusCode int, err error)
+	GetById(ctx context.Context, id int) (domain Domain, statusCode int, err error)
+	Update(ctx context.Context, book *Domain, id int) (domain Domain, statusCode int, err error)
+	Delete(ctx context.Context, id int) (statusCode int, err error)
 }
 
 type Repository interface {

@@ -3,6 +3,7 @@ package users_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -81,9 +82,10 @@ func TestStore(t *testing.T) {
 		pass, _ := helpers.GenerateHash("11111")
 
 		userRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
-		result, err := userUsecase.Store(context.Background(), req.ToDomain())
+		result, statusCode, err := userUsecase.Store(context.Background(), req.ToDomain())
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusCreated, statusCode)
 		assert.Equal(t, 1, result.ID)
 		assert.Equal(t, "patrick star", result.FullName)
 		assert.Equal(t, "user", result.Role)
@@ -94,9 +96,10 @@ func TestStore(t *testing.T) {
 
 	t.Run("When Failure", func(t *testing.T) {
 		userRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, errors.New("registration failed")).Once()
-		result, err := userUsecase.Store(context.Background(), req.ToDomain())
+		result, statusCode, err := userUsecase.Store(context.Background(), req.ToDomain())
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 		assert.Equal(t, 0, result.ID)
 	})
 
@@ -106,10 +109,11 @@ func TestGetAll(t *testing.T) {
 	setup(t)
 	t.Run("When Success Get Users Data", func(t *testing.T) {
 		userRepository.Mock.On("GetAll", mock.Anything).Return(usersDataFromDB, nil).Once()
-		result, err := userUsecase.GetAll(context.Background())
+		result, statusCode, err := userUsecase.GetAll(context.Background())
 
 		t.Run("Check User 1", func(t *testing.T) {
 			assert.Nil(t, err)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Equal(t, 1, result[0].ID)
 			assert.Equal(t, "patrick star", result[0].FullName)
 			assert.Equal(t, "itsmepatrick", result[0].Username)
@@ -120,6 +124,7 @@ func TestGetAll(t *testing.T) {
 		t.Run("Check User 2", func(t *testing.T) {
 			assert.Nil(t, err)
 			assert.Equal(t, 2, result[1].ID)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Equal(t, "john doe", result[1].FullName)
 			assert.Equal(t, "johny", result[1].Username)
 			assert.Equal(t, "johny123@gmail.com", result[1].Email)
@@ -129,9 +134,10 @@ func TestGetAll(t *testing.T) {
 
 	t.Run("When Failure Get Users Data", func(t *testing.T) {
 		userRepository.Mock.On("GetAll", mock.Anything).Return([]users.Domain{}, errors.New("get all users failed")).Once()
-		result, err := userUsecase.GetAll(context.Background())
+		result, statusCode, err := userUsecase.GetAll(context.Background())
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 		assert.Equal(t, []users.Domain{}, result)
 	})
 }
@@ -142,9 +148,10 @@ func TestGetById(t *testing.T) {
 		t.Run("With User Itself", func(t *testing.T) {
 			userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(userDataFromDB, nil).Once()
 
-			result, err := userUsecase.GetById(context.Background(), userDataFromDB.ID, userDataFromDB.ID)
+			result, statusCode, err := userUsecase.GetById(context.Background(), userDataFromDB.ID, userDataFromDB.ID)
 
 			assert.Equal(t, userDataFromDB, result)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Nil(t, err)
 			assert.NotEqual(t, "", result.Password)
 		})
@@ -153,21 +160,23 @@ func TestGetById(t *testing.T) {
 			userDataFromDB.Password = ""
 			userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(userDataFromDB, nil).Once()
 
-			result, err := userUsecase.GetById(context.Background(), userDataFromDB.ID, userDataFromDB.ID+1)
+			result, statusCode, err := userUsecase.GetById(context.Background(), userDataFromDB.ID, userDataFromDB.ID+1)
 
 			assert.Equal(t, userDataFromDB, result)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Nil(t, err)
 			assert.Equal(t, "", result.Password)
 		})
 	})
 
 	t.Run("When Failure User doesn't exist", func(t *testing.T) {
-		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(users.Domain{}, errors.New("user doesn't exist")).Once()
+		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(users.Domain{}, errors.New("user not found")).Once()
 
-		result, err := userUsecase.GetById(context.Background(), userDataFromDB.ID, userDataFromDB.ID)
+		result, statusCode, err := userUsecase.GetById(context.Background(), userDataFromDB.ID, userDataFromDB.ID)
 
 		assert.Equal(t, users.Domain{}, result)
-		assert.Equal(t, errors.New("user doesn't exist"), err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
+		assert.Equal(t, errors.New("user not found"), err)
 	})
 }
 
@@ -176,16 +185,19 @@ func TestDelete(t *testing.T) {
 	t.Run("When Success Delete User Data", func(t *testing.T) {
 		userRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("int")).Return(nil).Once()
 
-		err := userUsecase.Delete(context.Background(), userDataFromDB.ID)
+		statusCode, err := userUsecase.Delete(context.Background(), userDataFromDB.ID)
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusNoContent, statusCode)
 	})
 	t.Run("When Failure Delete User Data", func(t *testing.T) {
 		userRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("int")).Return(errors.New("failed")).Once()
 
-		err := userUsecase.Delete(context.Background(), 1)
+		statusCode, err := userUsecase.Delete(context.Background(), 1)
 
+		assert.NotNil(t, err)
 		assert.Equal(t, errors.New("failed"), err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 	})
 }
 
@@ -195,12 +207,13 @@ func TestUpdate(t *testing.T) {
 		data := userDataFromDB
 		data.UpdatedAt = time.Now()
 
-		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(data, nil).Once()
 		userRepository.Mock.On("Update", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(nil).Once()
+		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(data, nil).Once()
 
-		result, err := userUsecase.Update(context.Background(), &data, data.ID)
+		result, statusCode, err := userUsecase.Update(context.Background(), &data, data.ID)
 
 		assert.Equal(t, data, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 		assert.NotNil(t, result.UpdatedAt)
 	})
@@ -219,9 +232,10 @@ func TestLogin(t *testing.T) {
 		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
 		jwtService.Mock.On("GenerateToken", mock.AnythingOfType("int"), mock.AnythingOfType("bool"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("eyBlablablabla", nil).Once()
 
-		result, err := userUsecase.Login(context.Background(), req.ToDomain())
+		result, statusCode, err := userUsecase.Login(context.Background(), req.ToDomain())
 
 		assert.NotNil(t, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 		assert.Contains(t, result.Token, "ey")
 	})
@@ -235,10 +249,12 @@ func TestLogin(t *testing.T) {
 			userDataFromDB.Password, _ = helpers.GenerateHash(userDataFromDB.Password)
 
 			userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
-			result, err := userUsecase.Login(context.Background(), req.ToDomain())
+			result, statusCode, err := userUsecase.Login(context.Background(), req.ToDomain())
 
 			assert.Equal(t, users.Domain{}, result)
+			assert.Equal(t, http.StatusForbidden, statusCode)
 			assert.NotNil(t, err)
+			assert.Equal(t, errors.New("account is not activated"), err)
 			assert.Equal(t, "", result.Token)
 		})
 		t.Run("Invalid Credential", func(t *testing.T) {
@@ -251,10 +267,12 @@ func TestLogin(t *testing.T) {
 
 			userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
 
-			result, err := userUsecase.Login(context.Background(), req.ToDomain())
+			result, statusCode, err := userUsecase.Login(context.Background(), req.ToDomain())
 
 			assert.Equal(t, users.Domain{}, result)
 			assert.NotNil(t, err)
+			assert.Equal(t, http.StatusUnauthorized, statusCode)
+			assert.Equal(t, errors.New("invalid email or password"), err)
 			assert.Equal(t, "", result.Token)
 		})
 	})
@@ -265,19 +283,21 @@ func TestGetByEmail(t *testing.T) {
 	t.Run("When Success Get User Data By Email", func(t *testing.T) {
 		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
 
-		result, err := userUsecase.GetByEmail(context.Background(), "najibfikri13@gmail.com")
+		result, statusCode, err := userUsecase.GetByEmail(context.Background(), "najibfikri13@gmail.com")
 
-		assert.Equal(t, userDataFromDB, result)
 		assert.Nil(t, err)
+		assert.Equal(t, userDataFromDB, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 	})
 
 	t.Run("When Failure User doesn't exist", func(t *testing.T) {
-		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, errors.New("user doesn't exist")).Once()
+		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, errors.New("email not found")).Once()
 
-		result, err := userUsecase.GetByEmail(context.Background(), "johndoe@gmail.com")
+		result, statusCode, err := userUsecase.GetByEmail(context.Background(), "johndoe@gmail.com")
 
 		assert.Equal(t, users.Domain{}, result)
-		assert.Equal(t, errors.New("user doesn't exist"), err)
+		assert.Equal(t, errors.New("email not found"), err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
 	})
 }
 
@@ -287,18 +307,20 @@ func TestActivate(t *testing.T) {
 		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
 		userRepository.Mock.On("Update", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(nil).Once()
 
-		err := userUsecase.ActivateUser(context.Background(), "najibfikri13@gmail.com")
+		statusCode, err := userUsecase.ActivateUser(context.Background(), "najibfikri13@gmail.com")
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, statusCode)
 	})
 
 	t.Run("When Failure Activate Email", func(t *testing.T) {
-		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, errors.New("user doesn't exist")).Once()
+		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, errors.New("email not found")).Once()
 
-		result, err := userUsecase.GetByEmail(context.Background(), "johndoe@gmail.com")
+		result, statusCode, err := userUsecase.GetByEmail(context.Background(), "johndoe@gmail.com")
 
 		assert.Equal(t, users.Domain{}, result)
-		assert.Equal(t, errors.New("user doesn't exist"), err)
+		assert.Equal(t, errors.New("email not found"), err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
 	})
 }
 
@@ -312,17 +334,23 @@ func TestChangePassword(t *testing.T) {
 		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(userDomDB, nil).Once()
 		userRepository.Mock.On("Update", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(nil).Once()
 
-		err := userUsecase.ChangePassword(context.Background(), &userDataFromDB, newPass, userDataFromDB.ID)
+		statusCode, err := userUsecase.ChangePassword(context.Background(), &userDataFromDB, newPass, userDataFromDB.ID)
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, statusCode)
 	})
 
 	t.Run("When Failure Change Password", func(t *testing.T) {
-		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(users.Domain{}, errors.New("user doesn't exist")).Once()
+		userDomDB := userDataFromDB
+		userDomDB.Password, _ = helpers.GenerateHash(userDataFromDB.Password)
 
-		err := userUsecase.ChangePassword(context.Background(), &userDataFromDB, newPass, userDataFromDB.ID)
+		userRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(userDomDB, nil).Once()
+		userRepository.Mock.On("Update", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(errors.New("failed to update user data")).Once()
+
+		statusCode, err := userUsecase.ChangePassword(context.Background(), &userDataFromDB, newPass, userDataFromDB.ID)
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 	})
 }
 
@@ -333,14 +361,17 @@ func TestChangeEmail(t *testing.T) {
 
 		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, errors.New("user not found")).Once()
 		userRepository.Mock.On("UpdateEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(nil).Once()
-		err := userUsecase.ChangeEmail(context.Background(), &userDataFromDB, userDataFromDB.ID)
+		statusCode, err := userUsecase.ChangeEmail(context.Background(), &userDataFromDB, userDataFromDB.ID)
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusOK, statusCode)
 	})
 	t.Run("When Failure Change Email", func(t *testing.T) {
-		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
-		err := userUsecase.ChangeEmail(context.Background(), &userDataFromDB, userDataFromDB.ID)
+		userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(users.Domain{}, nil).Once()
+		userRepository.Mock.On("UpdateEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(errors.New("failed when change email")).Once()
+		statusCode, err := userUsecase.ChangeEmail(context.Background(), &userDataFromDB, userDataFromDB.ID)
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 	})
 }

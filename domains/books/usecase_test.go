@@ -3,6 +3,7 @@ package books_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -70,10 +71,11 @@ func TestStore(t *testing.T) {
 		}
 
 		bookRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*books.Domain")).Return(booksFromDB, nil).Once()
-		result, err := bookUsecase.Store(context.Background(), req.ToDomain())
+		result, statusCode, err := bookUsecase.Store(context.Background(), req.ToDomain())
 
 		assert.Nil(t, err)
 		assert.Equal(t, 1, result.ID)
+		assert.Equal(t, http.StatusCreated, statusCode)
 		assert.Equal(t, "Atomic Habits", result.Title)
 		assert.Equal(t, "lorem ipsum doler sit amet", result.Description)
 		assert.Equal(t, "James Clear", result.Author)
@@ -84,9 +86,10 @@ func TestStore(t *testing.T) {
 
 	t.Run("When Failure", func(t *testing.T) {
 		bookRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*books.Domain")).Return(books.Domain{}, errors.New("create book failed")).Once()
-		result, err := bookUsecase.Store(context.Background(), req.ToDomain())
+		result, statusCode, err := bookUsecase.Store(context.Background(), req.ToDomain())
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 		assert.Equal(t, 0, result.ID)
 	})
 
@@ -96,10 +99,11 @@ func TestGetAll(t *testing.T) {
 	setup(t)
 	t.Run("When Success Get Books Data", func(t *testing.T) {
 		bookRepository.Mock.On("GetAll", mock.Anything).Return(booksDataFromDB, nil).Once()
-		result, err := bookUsecase.GetAll(context.Background())
+		result, statusCode, err := bookUsecase.GetAll(context.Background())
 
 		t.Run("Check Book 1", func(t *testing.T) {
 			assert.Nil(t, err)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Equal(t, 1, result[0].ID)
 			assert.Equal(t, booksDataFromDB[0].Title, result[0].Title)
 			assert.Equal(t, booksDataFromDB[0].Description, result[0].Description)
@@ -111,6 +115,7 @@ func TestGetAll(t *testing.T) {
 
 		t.Run("Check Book 2", func(t *testing.T) {
 			assert.Nil(t, err)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Equal(t, 2, result[1].ID)
 			assert.Equal(t, booksDataFromDB[1].Title, result[1].Title)
 			assert.Equal(t, booksDataFromDB[1].Description, result[1].Description)
@@ -123,9 +128,10 @@ func TestGetAll(t *testing.T) {
 
 	t.Run("When Failure Get Books Data", func(t *testing.T) {
 		bookRepository.Mock.On("GetAll", mock.Anything).Return([]books.Domain{}, errors.New("get all books failed")).Once()
-		result, err := bookUsecase.GetAll(context.Background())
+		result, statusCode, err := bookUsecase.GetAll(context.Background())
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 		assert.Equal(t, []books.Domain{}, result)
 	})
 }
@@ -135,19 +141,21 @@ func TestGetById(t *testing.T) {
 	t.Run("When Success Get Book Data", func(t *testing.T) {
 		bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(bookDataFromDB, nil).Once()
 
-		result, err := bookUsecase.GetById(context.Background(), bookDataFromDB.ID)
+		result, statusCode, err := bookUsecase.GetById(context.Background(), bookDataFromDB.ID)
 
 		assert.Equal(t, bookDataFromDB, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 	})
 
 	t.Run("When Failure Book doesn't exist", func(t *testing.T) {
-		bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(books.Domain{}, errors.New("book doesn't exist")).Once()
+		bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(books.Domain{}, errors.New("book not found")).Once()
 
-		result, err := bookUsecase.GetById(context.Background(), bookDataFromDB.ID)
+		result, statusCode, err := bookUsecase.GetById(context.Background(), bookDataFromDB.ID)
 
 		assert.Equal(t, books.Domain{}, result)
-		assert.Equal(t, errors.New("book doesn't exist"), err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
+		assert.Equal(t, errors.New("book not found"), err)
 	})
 }
 
@@ -157,26 +165,29 @@ func TestDelete(t *testing.T) {
 		bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(bookDataFromDB, nil).Once()
 		bookRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("int")).Return(nil).Once()
 
-		err := bookUsecase.Delete(context.Background(), bookDataFromDB.ID)
+		statusCode, err := bookUsecase.Delete(context.Background(), bookDataFromDB.ID)
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusNoContent, statusCode)
 	})
 	t.Run("When Failure Delete Book Data", func(t *testing.T) {
 
 		t.Run("User doesn't exist", func(t *testing.T) {
-			bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(books.Domain{}, errors.New("book doesn't exist")).Once()
+			bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(books.Domain{}, errors.New("book not found")).Once()
 
-			err := bookUsecase.Delete(context.Background(), 1)
+			statusCode, err := bookUsecase.Delete(context.Background(), 1)
 
-			assert.Equal(t, errors.New("book doesn't exist"), err)
+			assert.Equal(t, errors.New("book not found"), err)
+			assert.Equal(t, http.StatusNotFound, statusCode)
 		})
 
 		t.Run("Failed Delete Book", func(t *testing.T) {
 			bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(bookDataFromDB, nil).Once()
 			bookRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("int")).Return(errors.New("failed")).Once()
 
-			err := bookUsecase.Delete(context.Background(), 1)
+			statusCode, err := bookUsecase.Delete(context.Background(), 1)
 
+			assert.Equal(t, http.StatusInternalServerError, statusCode)
 			assert.Equal(t, errors.New("failed"), err)
 		})
 	})
@@ -190,9 +201,10 @@ func TestUpdate(t *testing.T) {
 		bookRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(updatedBookFromDB, nil).Once()
 		bookRepository.Mock.On("Update", mock.Anything, mock.AnythingOfType("*books.Domain")).Return(nil).Once()
 
-		result, err := bookUsecase.Update(context.Background(), &bookDataFromDB, bookDataFromDB.ID)
+		result, statusCode, err := bookUsecase.Update(context.Background(), &bookDataFromDB, bookDataFromDB.ID)
 
 		assert.Equal(t, updatedBookFromDB, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 		assert.NotNil(t, result.UpdatedAt)
 	})

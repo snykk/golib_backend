@@ -3,6 +3,7 @@ package reviews_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -74,9 +75,10 @@ func TestStore(t *testing.T) {
 	}
 	t.Run("When Success Store Review Data", func(t *testing.T) {
 		reviewRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*reviews.Domain")).Return(reviewDataFromDB, nil).Once()
-		result, err := reviewUsecase.Store(context.Background(), req.ToDomain(), userFromDB.ID)
+		result, statusCode, err := reviewUsecase.Store(context.Background(), req.ToDomain(), userFromDB.ID)
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusCreated, statusCode)
 		assert.Equal(t, 1, result.ID)
 		assert.NotEqual(t, books.Domain{}, result.Book)
 		assert.NotEqual(t, users.Domain{}, result.User)
@@ -85,9 +87,10 @@ func TestStore(t *testing.T) {
 
 	t.Run("When Failure Store Review Data", func(t *testing.T) {
 		reviewRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*reviews.Domain")).Return(reviews.Domain{}, errors.New("create review failed")).Once()
-		result, err := reviewUsecase.Store(context.Background(), req.ToDomain(), userFromDB.ID)
+		result, statusCode, err := reviewUsecase.Store(context.Background(), req.ToDomain(), userFromDB.ID)
 
 		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 		assert.Equal(t, 0, result.ID)
 	})
 
@@ -97,20 +100,21 @@ func TestGetAll(t *testing.T) {
 	setup(t)
 	t.Run("When Success Get reviews Data", func(t *testing.T) {
 		reviewRepository.Mock.On("GetAll", mock.Anything).Return(reviewsDataFromDB, nil).Once()
-		result, err := reviewUsecase.GetAll(context.Background())
+		result, statusCode, err := reviewUsecase.GetAll(context.Background())
 
 		assert.Nil(t, err)
 		assert.NotEqual(t, 0, result[0].ID)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Equal(t, reviewsDataFromDB, result)
-
 	})
 
 	t.Run("When Failure Get reviews Data", func(t *testing.T) {
 		reviewRepository.Mock.On("GetAll", mock.Anything).Return([]reviews.Domain{}, errors.New("get all reviews failed")).Once()
-		result, err := reviewUsecase.GetAll(context.Background())
+		result, statusCode, err := reviewUsecase.GetAll(context.Background())
 
 		assert.NotNil(t, err)
 		assert.Equal(t, []reviews.Domain{}, result)
+		assert.Equal(t, http.StatusInternalServerError, statusCode)
 	})
 }
 
@@ -119,19 +123,21 @@ func TestGetById(t *testing.T) {
 	t.Run("When Success Get review Data", func(t *testing.T) {
 		reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviewDataFromDB, nil).Once()
 
-		result, err := reviewUsecase.GetById(context.Background(), reviewDataFromDB.ID)
+		result, statusCode, err := reviewUsecase.GetById(context.Background(), reviewDataFromDB.ID)
 
 		assert.Equal(t, reviewDataFromDB, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 	})
 
 	t.Run("When Failure Review doesn't exist", func(t *testing.T) {
-		reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviews.Domain{}, errors.New("review doesn't exist")).Once()
+		reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviews.Domain{}, errors.New("review not found")).Once()
 
-		result, err := reviewUsecase.GetById(context.Background(), reviewDataFromDB.ID)
+		result, statusCode, err := reviewUsecase.GetById(context.Background(), reviewDataFromDB.ID)
 
 		assert.Equal(t, reviews.Domain{}, result)
-		assert.Equal(t, errors.New("review doesn't exist"), err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
+		assert.Equal(t, errors.New("review not found"), err)
 	})
 }
 
@@ -141,18 +147,20 @@ func TestDelete(t *testing.T) {
 		reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviewDataFromDB, nil).Once()
 		reviewRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("*reviews.Domain")).Return(reviewDataFromDB.BookId, nil).Once()
 
-		bookId, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
+		bookId, statusCode, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
 
 		assert.Nil(t, err)
+		assert.Equal(t, http.StatusNoContent, statusCode)
 		assert.Equal(t, bookId, reviewDataFromDB.UserId)
 	})
 	t.Run("When Failure Delete review Data", func(t *testing.T) {
 		t.Run("Reviews doesn't exist", func(t *testing.T) {
 			reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviews.Domain{}, errors.New("review doesn't exist")).Once()
 
-			bookId, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
+			bookId, statusCode, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
 
 			assert.Equal(t, errors.New("review not found"), err)
+			assert.Equal(t, http.StatusNotFound, statusCode)
 			assert.Equal(t, 0, bookId)
 		})
 
@@ -160,9 +168,10 @@ func TestDelete(t *testing.T) {
 			reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviewDataFromDB, nil).Once()
 			reviewRepository.Mock.On("Delete", mock.Anything, mock.AnythingOfType("*reviews.Domain")).Return(0, errors.New("failed")).Once()
 
-			bookId, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
+			bookId, statusCode, err := reviewUsecase.Delete(context.Background(), reviewDataFromDB.UserId, reviewDataFromDB.ID)
 
 			assert.Equal(t, errors.New("failed"), err)
+			assert.Equal(t, http.StatusInternalServerError, statusCode)
 			assert.Equal(t, 0, bookId)
 		})
 	})
@@ -176,9 +185,10 @@ func TestUpdate(t *testing.T) {
 			reviewRepository.Mock.On("Update", mock.Anything, mock.AnythingOfType("*reviews.Domain")).Return(nil).Once()
 			reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviewDataFromDB, nil).Once()
 
-			result, err := reviewUsecase.Update(context.Background(), &reviewDataFromDB, reviewDataFromDB.UserId, reviewDataFromDB.ID)
+			result, statusCode, err := reviewUsecase.Update(context.Background(), &reviewDataFromDB, reviewDataFromDB.UserId, reviewDataFromDB.ID)
 
 			assert.Nil(t, err)
+			assert.Equal(t, http.StatusOK, statusCode)
 			assert.Equal(t, reviewDataFromDB, result)
 		})
 	})
@@ -186,18 +196,20 @@ func TestUpdate(t *testing.T) {
 		t.Run("Review Doesn't Exists", func(t *testing.T) {
 			reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviews.Domain{}, errors.New("review doesn't exist")).Once()
 
-			result, err := reviewUsecase.Update(context.Background(), &reviewDataFromDB, reviewDataFromDB.UserId, reviewDataFromDB.ID)
+			result, statusCode, err := reviewUsecase.Update(context.Background(), &reviewDataFromDB, reviewDataFromDB.UserId, reviewDataFromDB.ID)
 
 			assert.Equal(t, errors.New("review not found"), err)
 			assert.Equal(t, reviews.Domain{}, result)
+			assert.Equal(t, http.StatusNotFound, statusCode)
 		})
 		t.Run("User Don't Have permissions", func(t *testing.T) {
 			reviewRepository.Mock.On("GetById", mock.Anything, mock.AnythingOfType("int")).Return(reviewDataFromDB, nil).Once()
 
-			result, err := reviewUsecase.Update(context.Background(), &reviewDataFromDB, reviewDataFromDB.UserId+3, reviewDataFromDB.ID)
+			result, statusCode, err := reviewUsecase.Update(context.Background(), &reviewDataFromDB, reviewDataFromDB.UserId+3, reviewDataFromDB.ID)
 
 			assert.Equal(t, errors.New("you don't have access to update this review"), err)
 			assert.Equal(t, reviews.Domain{}, result)
+			assert.Equal(t, http.StatusUnauthorized, statusCode)
 		})
 	})
 }
@@ -207,19 +219,21 @@ func TestGetByBookId(t *testing.T) {
 	t.Run("When Success Get review Data", func(t *testing.T) {
 		reviewRepository.Mock.On("GetByBookId", mock.Anything, mock.AnythingOfType("int")).Return([]reviews.Domain{reviewDataFromDB}, nil).Once()
 
-		result, err := reviewUsecase.GetByBookId(context.Background(), reviewDataFromDB.BookId)
+		result, statusCode, err := reviewUsecase.GetByBookId(context.Background(), reviewDataFromDB.BookId)
 
 		assert.Equal(t, []reviews.Domain{reviewDataFromDB}, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 	})
 
 	t.Run("When Failure Review doesn't exist", func(t *testing.T) {
 		reviewRepository.Mock.On("GetByBookId", mock.Anything, mock.AnythingOfType("int")).Return([]reviews.Domain{}, errors.New("review doesn't exist")).Once()
 
-		result, err := reviewUsecase.GetByBookId(context.Background(), reviewDataFromDB.BookId)
+		result, statusCode, err := reviewUsecase.GetByBookId(context.Background(), reviewDataFromDB.BookId)
 
 		assert.Equal(t, []reviews.Domain{}, result)
-		assert.Equal(t, errors.New("review doesn't exist"), err)
+		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
 	})
 }
 
@@ -228,19 +242,21 @@ func TestGetByUserId(t *testing.T) {
 	t.Run("When Success Get review Data", func(t *testing.T) {
 		reviewRepository.Mock.On("GetByUserId", mock.Anything, mock.AnythingOfType("int")).Return([]reviews.Domain{reviewDataFromDB}, nil).Once()
 
-		result, err := reviewUsecase.GetByUserId(context.Background(), reviewDataFromDB.UserId)
+		result, statusCode, err := reviewUsecase.GetByUserId(context.Background(), reviewDataFromDB.UserId)
 
 		assert.Equal(t, []reviews.Domain{reviewDataFromDB}, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 	})
 
 	t.Run("When Failure Review doesn't exist", func(t *testing.T) {
 		reviewRepository.Mock.On("GetByUserId", mock.Anything, mock.AnythingOfType("int")).Return([]reviews.Domain{}, errors.New("review doesn't exist")).Once()
 
-		result, err := reviewUsecase.GetByUserId(context.Background(), reviewDataFromDB.UserId)
+		result, statusCode, err := reviewUsecase.GetByUserId(context.Background(), reviewDataFromDB.UserId)
 
+		assert.NotNil(t, err)
 		assert.Equal(t, []reviews.Domain{}, result)
-		assert.Equal(t, errors.New("review doesn't exist"), err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
 	})
 }
 
@@ -249,18 +265,20 @@ func TestGetUserReview(t *testing.T) {
 	t.Run("When Success Get User Review", func(t *testing.T) {
 		reviewRepository.Mock.On("GetUserReview", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(reviewDataFromDB, nil).Once()
 
-		result, err := reviewUsecase.GetUserReview(context.Background(), reviewDataFromDB.BookId, reviewDataFromDB.UserId)
+		result, statusCode, err := reviewUsecase.GetUserReview(context.Background(), reviewDataFromDB.BookId, reviewDataFromDB.UserId)
 
 		assert.Equal(t, reviewDataFromDB, result)
+		assert.Equal(t, http.StatusOK, statusCode)
 		assert.Nil(t, err)
 	})
 
 	t.Run("When Failure User Review Review doesn't exist", func(t *testing.T) {
 		reviewRepository.Mock.On("GetUserReview", mock.Anything, mock.AnythingOfType("int"), mock.AnythingOfType("int")).Return(reviews.Domain{}, errors.New("review doesn't exist")).Once()
 
-		result, err := reviewUsecase.GetUserReview(context.Background(), reviewDataFromDB.BookId, reviewDataFromDB.UserId)
+		result, statusCode, err := reviewUsecase.GetUserReview(context.Background(), reviewDataFromDB.BookId, reviewDataFromDB.UserId)
 
 		assert.Equal(t, reviews.Domain{}, result)
-		assert.Equal(t, errors.New("review doesn't exist"), err)
+		assert.NotNil(t, err)
+		assert.Equal(t, http.StatusNotFound, statusCode)
 	})
 }

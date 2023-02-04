@@ -21,13 +21,13 @@ import (
 	controllers "github.com/snykk/golib_backend/http/controllers/users"
 	"github.com/snykk/golib_backend/http/controllers/users/request"
 	"github.com/snykk/golib_backend/http/token"
-	jwtMocs "github.com/snykk/golib_backend/http/token/mocks"
+	jwtMocks "github.com/snykk/golib_backend/http/token/mocks"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
 
 var (
-	jwtService      jwtMocs.JWTService
+	jwtService      *jwtMocks.JWTService
 	userRepository  *userMocks.Repository
 	userUsecase     users.Usecase
 	userController  controllers.UserController
@@ -39,11 +39,11 @@ var (
 )
 
 func setup(t *testing.T) {
-	jwtService = jwtMocs.JWTService{}
+	jwtService = jwtMocks.NewJWTService(t)
 	redisMock = cacheMocks.NewRedisCache(t)
 	ristrettoMock = cacheMocks.NewRistrettoCache(t)
 	userRepository = userMocks.NewRepository(t)
-	userUsecase = users.NewUserUsecase(userRepository, &jwtService)
+	userUsecase = users.NewUserUsecase(userRepository, jwtService)
 	userController = controllers.NewUserController(userUsecase, redisMock, ristrettoMock)
 
 	usersDataFromDB = []users.Domain{
@@ -121,7 +121,6 @@ func TestRegis(t *testing.T) {
 		reqBody, _ := json.Marshal(req)
 
 		userRepository.Mock.On("Store", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
-		jwtService.Mock.On("GenerateToken", mock.AnythingOfType("int"), mock.AnythingOfType("bool"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("eyBlablablabla", nil).Once()
 
 		w := httptest.NewRecorder()
 		r := httptest.NewRequest(http.MethodPost, "/auth/regis", bytes.NewReader(reqBody))

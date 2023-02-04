@@ -16,7 +16,7 @@ import (
 )
 
 var (
-	jwtService      jwtMocks.JWTService
+	jwtService      *jwtMocks.JWTService
 	userRepository  *repositoryMocks.Repository
 	userUsecase     users.Usecase
 	usersDataFromDB []users.Domain
@@ -24,8 +24,9 @@ var (
 )
 
 func setup(t *testing.T) {
+	jwtService = jwtMocks.NewJWTService(t)
 	userRepository = repositoryMocks.NewRepository(t)
-	userUsecase = users.NewUserUsecase(userRepository, &jwtService)
+	userUsecase = users.NewUserUsecase(userRepository, jwtService)
 	usersDataFromDB = []users.Domain{
 		{
 			ID:          1,
@@ -234,7 +235,6 @@ func TestLogin(t *testing.T) {
 			userDataFromDB.Password, _ = helpers.GenerateHash(userDataFromDB.Password)
 
 			userRepository.Mock.On("GetByEmail", mock.Anything, mock.AnythingOfType("*users.Domain")).Return(userDataFromDB, nil).Once()
-			jwtService.Mock.On("GenerateToken", mock.AnythingOfType("int"), mock.AnythingOfType("bool"), mock.AnythingOfType("string"), mock.AnythingOfType("string")).Return("eyBlablablabla", nil).Once()
 			result, err := userUsecase.Login(context.Background(), req.ToDomain())
 
 			assert.Equal(t, users.Domain{}, result)

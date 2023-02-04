@@ -53,3 +53,18 @@ func (_m *JWTService) ParseToken(tokenString string) (token.JwtCustomClaim, erro
 
 	return r0, r1
 }
+
+type mockConstructorTestingTNewJWTService interface {
+	mock.TestingT
+	Cleanup(func())
+}
+
+// NewJWTService creates a new instance of JWTService. It also registers a testing interface on the mock and a cleanup function to assert the mocks expectations.
+func NewJWTService(t mockConstructorTestingTNewJWTService) *JWTService {
+	mock := &JWTService{}
+	mock.Mock.Test(t)
+
+	t.Cleanup(func() { mock.AssertExpectations(t) })
+
+	return mock
+}
